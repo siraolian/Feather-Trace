@@ -3,22 +3,23 @@
  * ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 :root {
-  --green: #2E7D32;
-  --green-light: #E8F5E9;
-  --green-mid: #66BB6A;
-  --text: #263238;
-  --text2: #78909C;
-  --bg: #F4F7F4;
+  --green: #95BD39;          /* 主绿色 */
+  --green-mid: #C4C737;      /* 辅助黄色/黄绿色 */
+  --green-light: #F4F9E8;    /* 极浅的绿色，用于背景 */
+  --text: #333333;
+  --text2: #888888;
+  --bg: #F7F9F4;            /* 类似PDF的浅灰绿色背景 */
   --card: #FFFFFF;
-  --radius: 14px;
-  --shadow: 0 2px 10px rgba(46,125,50,.08);
+  --radius: 16px;           /* 稍微调大圆角，更贴合PDF的圆润设计 */
+  --shadow: 0 4px 16px rgba(149, 189, 57, 0.08); /* 柔和绿色阴影 */
 }
 html, body { height: 100%; }
 body {
-  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-  background: #E3E8E3;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #E8EDE4;
   color: var(--text);
   display: flex; justify-content: center; align-items: center;
+  margin: 0;
 }
 
 /* 手机外壳 */
