@@ -47,7 +47,7 @@ const AI = (() => {
       const img = e.target.result;
       // 图片内容指纹（演示用确定性随机）
       let hash = 0;
-      for (let i = 0; i < img.length; i += 97) hash = (hash * 31 + img.charCodeAt(i)) >>> 0;
+      for (let i = 0; i <img.length; i += 97) hash = (hash * 31 + img.charCodeAt(i)) >>> 0;
       const list = ['cuiniao', 'bailu', 'baitoubei', 'wudong', 'daisheng', 'hongzuilanque', 'heishuiji', 'lvtouya'];
       const pick = list[hash % list.length];
       const conf = 0.82 + (hash % 13) / 100;
