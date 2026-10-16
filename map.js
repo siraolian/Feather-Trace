@@ -113,12 +113,32 @@ const MapView = (() => {
   function render(container) {
     const t = state.tab;
     let html = `
-      <div class="map-toolbar">
-        <span class="chip ${t === 'near' ? 'active' : ''}" data-ft="map-tab" data-v="near">附近</span>
-        <span class="chip ${t === 'group' ? 'active' : ''}" data-ft="map-tab" data-v="group">类别</span>
-        <span class="chip ${t === 'spot' ? 'active' : ''}" data-ft="map-tab" data-v="spot">地点</span>
-        <span class="chip ${t === 'filter' ? 'active' : ''}" data-ft="map-tab" data-v="filter">筛选</span>
-      </div>
+      let html = `
+  <div class="map-toolbar" style="display:flex; flex-direction:column; gap:10px; padding: 10px 12px 0;">
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="mapSearchInput" placeholder="搜索观测点或鸟种..." style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px 15px; font-size:13px; outline:none;">
+    </div>
+    <div style="display:flex; gap:8px;">
+      <select id="mapEnvSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+        <option value="全部">全部环境</option>
+        <option value="湿地">湿地</option>
+        <option value="湖泊">湖泊</option>
+        <option value="公园">公园</option>
+        <option value="山林">山林</option>
+        <option value="园林">园林</option>
+      </select>
+      <select id="mapGroupSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+        <option value="全部">全部类别</option>
+        <option value="水鸟">水鸟</option>
+        <option value="林鸟">林鸟</option>
+        <option value="城市常见">城市常见</option>
+      </select>
+    </div>
+  </div>
+  <div class="map-legend">
+    ${Object.entries(GROUP_COLOR).map(([k, c]) => `<span><i class="dot" style="background:${c}"></i>${k}</span>`).join('')}
+    ${t === 'near' ? `<span style="color:#F44336">◎ 我的位置</span>` : ''}
+  </div>
       <div class="map-legend">
         ${Object.entries(GROUP_COLOR).map(([k, c]) => `<span><i class="dot" style="background:${c}"></i>${k}</span>`).join('')}
         ${t === 'near' ? `<span style="color:#F44336">◎ 我的位置</span>` : ''}
@@ -179,6 +199,20 @@ const MapView = (() => {
   }
 
   function bindEvents(root) {
+    const searchInp = root.querySelector('#mapSearchInput');
+const envSel = root.querySelector('#mapEnvSelect');
+const groupSel = root.querySelector('#mapGroupSelect');
+
+// 输入框过滤（这里只是把搜索字存起来，后续你可以加具体的过滤逻辑）
+if (searchInp) {
+  searchInp.addEventListener('input', (e) => { 
+    // 可以在这里调用 App.renderCurrent() 并传入搜索词，或者直接过滤 spots 
+  });
+}
+
+// 下拉菜单直接触发筛选
+if (envSel) envSel.addEventListener('change', (e) => { state.env = e.target.value; App.renderCurrent(); });
+if (groupSel) groupSel.addEventListener('change', (e) => { state.group = e.target.value; App.renderCurrent(); });
     root.querySelectorAll('[data-ft="map-tab"]').forEach(el => {
       el.addEventListener('click', () => { state.tab = el.dataset.v; App.renderCurrent(); });
     });
