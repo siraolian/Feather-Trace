@@ -25,29 +25,30 @@ const App = (() => {
 
   /* ================= 页面切换 ================= */
   const TOP_TABS = ['comm', 'map', 'ai', 'progress'];
-  function switchPage(p) {
-    current = p;
-    // 隐藏顶栏逻辑
-    const topTabs = document.querySelector('.top-tabs');
-    if (['shop', 'msg', 'mine'].includes(p)) {
-      topTabs.classList.add('hidden');
-    } else {
-      topTabs.classList.remove('hidden');
-    }
-    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-    document.getElementById('page-' + (TOP_TABS.includes(p) ? p : 'comm')).classList.add('active');
-    // 顶部 Tab
-    document.querySelectorAll('.top-tabs .tab').forEach(el => {
-      el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
-    });
-    // 底部导航
-    document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
-      const tab = el.dataset.tab;
-      const active = tab === 'home' ? TOP_TABS.includes(p) : tab === p;
-      el.classList.toggle('active', active);
-    });
-    renderCurrent();
-  }
+function switchPage(p) {
+  current = p;
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  // 判断要显示哪个容器
+  let pageId = 'page-comm';
+  if (TOP_TABS.includes(p)) pageId = 'page-' + p;
+  else if (['my-birds', 'my-badges', 'offline', 'edit-profile'].includes(p)) pageId = 'page-' + p;
+  
+  document.getElementById(pageId).classList.add('active');
+  
+  // 顶栏和底部导航的 active 状态逻辑
+  document.querySelectorAll('.top-tabs .tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
+  });
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
+    const tab = el.dataset.tab;
+    let active = false;
+    if (tab === 'home') active = TOP_TABS.includes(p);
+    else if (tab === 'mine') active = ['mine', 'my-birds', 'my-badges', 'offline', 'edit-profile'].includes(p);
+    else active = tab === p;
+    el.classList.toggle('active', active);
+  });
+  renderCurrent();
+}
 
   function renderCurrent() {
     // 售卖/信息/我的 复用 page-comm 容器（底部导航页）
@@ -60,6 +61,10 @@ const App = (() => {
     else if (current === 'shop') renderShop(el);
     else if (current === 'msg') renderMsg(el);
     else if (current === 'mine') renderMine(el);
+    else if (current === 'my-birds') renderMyBirds();
+    else if (current === 'my-badges') renderMyBadges();
+    else if (current === 'offline') renderOfflinePage();
+    else if (current === 'edit-profile') renderEditProfile();
   }
 
   /* ================= 交流区 ================= */
@@ -421,66 +426,98 @@ const App = (() => {
     el.innerHTML = html;
     el.querySelectorAll('[data-ft="open-vip"]').forEach(x => x.addEventListener('click', openVip));
     el.querySelectorAll('[data-ft="my-posts"]').forEach(x => x.addEventListener('click', () => toast('已在下方展示你的帖子')));
-    el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', showMyBirds));
-    el.querySelectorAll('[data-ft="my-badges"]').forEach(x => x.addEventListener('click', () => toast(`已解锁 ${ach.length} 个徽章，继续加油！`)));
-    el.querySelectorAll('[data-ft="offline"]').forEach(x => x.addEventListener('click', showOffline));
-    el.querySelectorAll('[data-ft="edit-profile"]').forEach(x => x.addEventListener('click', editProfile));
-    el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
-      if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
-    }));
-    // 点击头像区域进资料编辑
-    el.querySelector('.mine-head').addEventListener('click', editProfile);
+  // 点击跳转到独立页面（不再使用弹窗）
+el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-birds')));
+el.querySelectorAll('[data-ft="my-badges"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-badges')));
+el.querySelectorAll('[data-ft="offline"]').forEach(x => x.addEventListener('click', () => App.switchPage('offline')));
+el.querySelectorAll('[data-ft="edit-profile"]').forEach(x => x.addEventListener('click', () => App.switchPage('edit-profile')));
+
+// 重置演示数据（保持不变）
+el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
+  if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
+}));
+
+// 点击头像区域，也跳转到资料编辑页
+el.querySelector('.mine-head').addEventListener('click', () => App.switchPage('edit-profile'));
   }
 
-  function showMyBirds() {
-    const birds = Store.birds().map(birdById).filter(Boolean);
-    const body = birds.length ? `<div class="ai-cards">${birds.map(b => `
+ /* 新增：独立页面的渲染函数 */
+function renderMyBirds() {
+  const el = document.getElementById('page-my-birds');
+  const birds = Store.birds().map(birdById).filter(Boolean);
+  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>`;
+  if (birds.length) {
+    html += `<div class="ai-cards">${birds.map(b => `
       <div class="ai-card" data-ft="bird-open" data-id="${b.id}">
         <div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div>
-      </div>`).join('')}</div>`
-      : `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
-    openModal('modalBird', '我的鸟种收藏', body);
+      </div>`).join('')}</div>`;
+  } else {
+    html += `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
   }
+  html += `</div>`;
+  el.innerHTML = html;
+  el.querySelectorAll('[data-ft="bird-open"]').forEach(x => x.addEventListener('click', () => App.openBird(x.dataset.id)));
+}
 
-  function showOffline() {
-    const html = `
-      <div class="info-block"><b>📴 离线能力（已就绪）</b></div>
-      <div class="info-block">本应用数据与功能全部内置，无网络也可使用：</div>
-      <div class="vip-item"><span class="vi">🗺️</span><span>离线地图：内置武汉及周边 12 个观测点</span></div>
-      <div class="vip-item"><span class="vi">📚</span><span>离线物种库：25 种常见鸟类完整档案</span></div>
-      <div class="vip-item"><span class="vi">🤖</span><span>离线 AI 识别：本地特征匹配识别</span></div>
-      <div class="vip-item"><span class="vi">💾</span><span>数据本地存储：帖子/收藏/成就不丢失</span></div>
-      <div class="info-block" style="margin-top:10px">VIP 可下载更多区域的离线地图与物种库（野外无信号刚需）。</div>
-      <button class="btn primary block" data-ft="open-vip">升级 VIP 解锁更多离线包</button>`;
-    openModal('modalBird', '离线包管理', html);
-  }
+function renderMyBadges() {
+  const el = document.getElementById('page-my-badges');
+  const ach = achieveState();
+  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+    <div class="section-title">🏅 我的徽章 (${ach.filter(a=>a.done).length}/${ach.length})</div>
+    <div class="spot-list">`;
+  ach.forEach(a => {
+    html += `<div class="ach-card">
+      <div class="ach-icon ${a.done ? '' : 'locked'}">${a.icon}</div>
+      <div class="ach-info"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
+      <div class="ach-state">${a.done ? '✓ 已解锁' : `${a.cur}/${a.target}`}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+  el.innerHTML = html;
+}
 
-  function editProfile() {
-    const u = Store.user();
-    const avatars = ['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'];
-    const html = `
-      <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
-      <div class="section-title" style="margin:6px 0">选择头像</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-        ${avatars.map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
-      </div>
-      <button class="btn primary block" id="saveProfile">保存</button>`;
-    openModal('modalBird', '编辑资料', html);
-    document.getElementById('modalBird').querySelectorAll('[data-ft="avatar"]').forEach(el =>
-      el.addEventListener('click', () => {
-        document.getElementById('modalBird').querySelectorAll('[data-ft="avatar"]').forEach(x => x.style.border = '3px solid transparent');
-        el.style.border = '3px solid var(--green)';
-        el._pick = el.dataset.v;
-      })
-    );
-    document.getElementById('modalBird').querySelector('#saveProfile').addEventListener('click', () => {
-      const name = document.getElementById('editName').value.trim();
-      const picked = document.querySelector('[data-ft="avatar"][style*="var(--green)"]');
-      if (name) { u.name = name; toast('昵称已更新'); }
-      if (picked && picked.dataset.v) { u.avatar = picked.dataset.v; }
-      Store.saveUser(u); closeModal('modalBird'); renderMine(document.getElementById('page-mine'));
-    });
-  }
+function renderOfflinePage() {
+  const el = document.getElementById('page-offline');
+  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+    <div class="card"><div class="card-title">📴 离线能力（已就绪）</div>
+    <div class="card-sub">本应用数据与功能全部内置，无网络也可使用</div></div>
+    <div class="vip-item"><span class="vi">🗺️</span><span>离线地图：内置武汉及周边 12 个观测点</span></div>
+    <div class="vip-item"><span class="vi">📚</span><span>离线物种库：25 种常见鸟类完整档案</span></div>
+    <div class="vip-item"><span class="vi">🤖</span><span>离线 AI 识别：本地特征匹配识别</span></div>
+    <div class="vip-item"><span class="vi">💾</span><span>数据本地存储：帖子/收藏/成就不丢失</span></div>
+    <button class="btn primary block mt12" onclick="App.openVip()">升级 VIP 解锁更多离线包</button>
+    </div>`;
+  el.innerHTML = html;
+}
+
+function renderEditProfile() {
+  const el = document.getElementById('page-edit-profile');
+  const u = Store.user();
+  const avatars = ['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'];
+  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+    <div class="card"><div class="card-title">编辑资料</div>
+    <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
+    <div class="section-title" style="margin:6px 0">选择头像</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      ${avatars.map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
+    </div>
+    <button class="btn primary block" id="saveProfile">保存</button></div></div>`;
+  el.innerHTML = html;
+  
+  // 绑定选择头像和保存逻辑
+  el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
+    el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
+    x.style.border = '3px solid var(--green)';
+    x._pick = x.dataset.v;
+  }));
+  el.querySelector('#saveProfile').addEventListener('click', () => {
+    const name = el.querySelector('#editName').value.trim();
+    const picked = el.querySelector('[data-ft="avatar"][style*="var(--green)"]');
+    if (name) { u.name = name; }
+    if (picked && picked.dataset.v) { u.avatar = picked.dataset.v; }
+    Store.saveUser(u); toast('资料已更新'); switchPage('mine');
+  });
+}
 
   /* ================= VIP ================= */
   function openVip() {
@@ -553,15 +590,45 @@ const App = (() => {
 
   /* ================= 初始化 ================= */
   function init() {
-    // 绑定顶部搜索图标
-    const topSearchBtn = document.getElementById('topSearchBtn');
-    if (topSearchBtn) {
-      topSearchBtn.addEventListener('click', () => {
-        document.getElementById('globalSearchInput').value = '';
-        document.getElementById('searchResults').innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
-        openModal('modalSearch', '搜索', document.getElementById('modalSearch').querySelector('.modal-body').innerHTML);
-      });
-    }
+   // 顶部搜索全局绑定
+const topSearchBtn = document.getElementById('topSearchBtn');
+if (topSearchBtn) {
+  topSearchBtn.addEventListener('click', () => {
+    const modal = document.getElementById('modalSearch');
+    const input = document.getElementById('globalSearchInput');
+    const results = document.getElementById('searchResults');
+    input.value = '';
+    results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
+    
+    // 根据当前所在的页面，改变搜索提示词
+    if (current === 'comm') input.placeholder = '搜索交流区帖子...';
+    else if (current === 'map') input.placeholder = '搜索观测点或鸟种...';
+    else if (current === 'ai') input.placeholder = '搜索鸟类知识...';
+    else input.placeholder = '搜索当前页面...';
+
+    // 监听输入事件，开始过滤
+    input.oninput = (e) => {
+      const kw = e.target.value.trim();
+      if (!kw) { results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>'; return; }
+      
+      let html = '';
+      // 如果在交流界面，搜帖子
+      if (current === 'comm') {
+        const posts = Store.posts().filter(p => p.title.includes(kw) || p.content.includes(kw));
+        if(posts.length) html = posts.map(p => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.toast('跳转到帖子详情（演示）');"><div class="spot-name">📝 ${escapeHtml(p.title)}</div><div class="post-content" style="font-size:12px;">${escapeHtml(p.content).slice(0, 50)}...</div></div>`).join('');
+        else html = '<div class="empty" style="padding:20px">没有找到相关帖子</div>';
+      }
+      // 如果在AI界面或地图界面，搜鸟类数据
+      else if (current === 'map' || current === 'ai') {
+        const birds = BIRDS.filter(b => b.name.includes(kw) || b.features.includes(kw));
+        if(birds.length) html = birds.map(b => `<div class="ai-card" onclick="document.getElementById('modalSearch').classList.remove('show'); App.openBird('${b.id}');"><div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div></div>`).join('');
+        else html = '<div class="empty" style="padding:20px">没有找到相关鸟类</div>';
+      }
+      results.innerHTML = html;
+    };
+    modal.classList.add('show');
+  });
+}
     // 顶栏时间
     const now = new Date();
     document.getElementById('sbTime').textContent =
