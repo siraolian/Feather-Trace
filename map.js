@@ -40,7 +40,8 @@ const MapView = (() => {
     radius: 10,            // 筛选半径(km)
     keyword: '',           // 搜索关键词
     center: HOME,
-    locReady: false
+    locReady: false,
+    zoom: 1 //缩放倍数
   };
 
   function distKm(a, b) {
@@ -112,33 +113,43 @@ const MapView = (() => {
   function render(container) {
     const t = state.tab;
     let html = `
-      <div class="map-toolbar" style="display:flex; flex-direction:column; gap:10px; padding: 10px 12px 0;">
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="mapSearchInput" value="${state.keyword}" placeholder="搜索观测点或鸟种..." style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px 15px; font-size:13px; outline:none;">
-        </div>
-        <div style="display:flex; gap:8px;">
-          <select id="mapEnvSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
-            <option value="全部" ${state.env === '全部' ? 'selected' : ''}>全部环境</option>
-            <option value="湿地" ${state.env === '湿地' ? 'selected' : ''}>湿地</option>
-            <option value="湖泊" ${state.env === '湖泊' ? 'selected' : ''}>湖泊</option>
-            <option value="公园" ${state.env === '公园' ? 'selected' : ''}>公园</option>
-            <option value="山林" ${state.env === '山林' ? 'selected' : ''}>山林</option>
-            <option value="园林" ${state.env === '园林' ? 'selected' : ''}>园林</option>
-          </select>
-          <select id="mapGroupSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
-            <option value="全部" ${state.group === '全部' ? 'selected' : ''}>全部类别</option>
-            <option value="水鸟" ${state.group === '水鸟' ? 'selected' : ''}>水鸟</option>
-            <option value="林鸟" ${state.group === '林鸟' ? 'selected' : ''}>林鸟</option>
-            <option value="城市常见" ${state.group === '城市常见' ? 'selected' : ''}>城市常见</option>
-          </select>
-        </div>
-      </div>
-      <div class="map-legend">
-        ${Object.entries(GROUP_COLOR).map(([k, c]) => `<span><i class="dot" style="background:${c}"></i>${k}</span>`).join('')}
-        ${t === 'near' ? `<span style="color:#F44336">◎ 我的位置</span>` : ''}
-      </div>
-      <div class="map-wrap">${svgMap()}</div>
-    `;
+  <div class="map-toolbar" style="display:flex; flex-direction:column; gap:10px; padding: 10px 12px 0;">
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="mapSearchInput" value="${state.keyword}" placeholder="搜索观测点或鸟种..." style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px 15px; font-size:13px; outline:none;">
+    </div>
+    <div style="display:flex; gap:8px;">
+      <select id="mapEnvSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+        <option value="全部" ${state.env === '全部' ? 'selected' : ''}>全部环境</option>
+        <option value="湿地" ${state.env === '湿地' ? 'selected' : ''}>湿地</option>
+        <option value="湖泊" ${state.env === '湖泊' ? 'selected' : ''}>湖泊</option>
+        <option value="公园" ${state.env === '公园' ? 'selected' : ''}>公园</option>
+        <option value="山林" ${state.env === '山林' ? 'selected' : ''}>山林</option>
+        <option value="园林" ${state.env === '园林' ? 'selected' : ''}>园林</option>
+      </select>
+      <select id="mapGroupSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+        <option value="全部" ${state.group === '全部' ? 'selected' : ''}>全部类别</option>
+        <option value="水鸟" ${state.group === '水鸟' ? 'selected' : ''}>水鸟</option>
+        <option value="林鸟" ${state.group === '林鸟' ? 'selected' : ''}>林鸟</option>
+        <option value="城市常见" ${state.group === '城市常见' ? 'selected' : ''}>城市常见</option>
+      </select>
+    </div>
+    <!-- 👇 【新增】缩放按钮 -->
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+      <button class="btn ghost" style="padding:4px 12px; font-size:15px;" onclick="MapView.zoomIn()">➕ 放大</button>
+      <button class="btn ghost" style="padding:4px 12px; font-size:15px;" onclick="MapView.zoomOut()">➖ 缩小</button>
+    </div>
+  </div>
+  <div class="map-legend">
+    ${Object.entries(GROUP_COLOR).map(([k, c]) => `<span><i class="dot" style="background:${c}"></i>${k}</span>`).join('')}
+    ${t === 'near' ? `<span style="color:#F44336">◎ 定位点（10km内）</span>` : ''}
+  </div>
+  <!-- 👇 增加 max-height 和 overflow auto，配合放大查看 -->
+  <div class="map-wrap" style="overflow: auto; max-height: 480px;">
+    <div style="transform: scale(${state.zoom}); transform-origin: top left; transition: transform 0.2s;">
+      ${svgMap()}
+    </div>
+  </div>
+`;
 
     // 保留原有筛选面板（仅当点击“筛选”时显示）
     if (t === 'filter') {
@@ -286,5 +297,15 @@ const MapView = (() => {
     }
   }
 
-  return { render, useGeolocation, state };
+  // 👇 【新增】缩放控制函数
+function zoomIn() {
+  state.zoom = Math.min(3, state.zoom + 0.3); // 最大放大3倍
+  App.renderCurrent();
+}
+
+function zoomOut() {
+  state.zoom = Math.max(0.5, state.zoom - 0.3); // 最小缩小到0.5倍
+  App.renderCurrent();
+}
+  return { render, useGeolocation, state, zoomIn, zoomOut };
 })();
