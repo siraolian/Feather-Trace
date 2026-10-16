@@ -380,7 +380,7 @@ const App = (() => {
     const myPosts = Store.posts().filter(p => posts.includes(p.id));
     const ach = achieveState().filter(a => a.done);
     let html = `
-      <div class="mine-head">
+      <div class="mine-head" style="cursor: pointer;">
         <span class="avatar">${u.avatar}</span>
         <div>
           <div class="mine-name">${escapeHtml(u.name)}</div>
@@ -428,6 +428,8 @@ const App = (() => {
     el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
       if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
     }));
+    // 点击头像区域进资料编辑
+    el.querySelector('.mine-head').addEventListener('click', editProfile);
   }
 
   function showMyBirds() {
