@@ -71,7 +71,7 @@ body {
 .page-head .ptab.active { color: #C4C737; font-weight: 600; }
 .page-head .ptab.active::after {
   content: ''; position: absolute; left: 30%; right: 30%; bottom: 0;
-  height: 3px; background: var(--green); border-radius: 3px 3px 0 0;
+  height: 3px; background: #C4C737; border-radius: 3px 3px 0 0;
 }
 
 /* 卡片 */
