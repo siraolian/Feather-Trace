@@ -68,7 +68,7 @@ body {
   flex: 1; text-align: center; font-size: 14px; color: var(--text2);
   padding: 12px 0; cursor: pointer; position: relative;
 }
-.page-head .ptab.active { color: var(--green); font-weight: 600; }
+.page-head .ptab.active { color: #C4C737; font-weight: 600; }
 .page-head .ptab.active::after {
   content: ''; position: absolute; left: 30%; right: 30%; bottom: 0;
   height: 3px; background: var(--green); border-radius: 3px 3px 0 0;
@@ -239,23 +239,46 @@ body {
 
 .modal.show { display: flex; }
 
-/* 弹窗本体 */
+/* 弹窗本体（白色背景容器） */
 .modal-inner {
-  width: 90%; max-width: 360px; max-height: 80vh; background: #fff;
-  border-radius: 20px; display: flex; flex-direction: column; overflow: hidden;
-  animation: slideUp 0.25s ease-out;
+  width: 90%; 
+  max-width: 360px; 
+  max-height: 80vh; 
+  background: #FFFFFF; /* 白底，解决看不清的问题 */
+  border-radius: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden;
+  animation: pop .18s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-@keyframes slideUp {
-  from { transform: translateY(50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+/* 弹窗标题栏（把标题移到上方） */
 .modal-head {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 15px 18px; font-weight: 600; border-bottom: 1px solid #EDF2ED;
+  display: flex; 
+  justify-content: space-between; /* 标题靠左，关闭按钮靠右 */
+  align-items: center;
+  padding: 16px 20px; 
+  font-weight: 600; 
+  font-size: 16px;
+  background: #FFFFFF; /* 标题栏白底 */
+  border-bottom: 1px solid #F0F4F0; /* 分割线 */
+  flex-shrink: 0;
 }
-.modal-head .close { cursor: pointer; color: var(--text2); font-size: 16px; padding: 0 2px; }
-.modal-body { padding: 16px 18px; overflow-y: auto; }
+
+.modal-head .close { 
+  cursor: pointer; 
+  color: #888; 
+  font-size: 18px; 
+  padding: 0 5px; 
+}
+
+/* 弹窗正文区（加背景色和内边距） */
+.modal-body { 
+  padding: 18px 20px; 
+  overflow-y: auto; 
+  background: #FFFFFF; /* 确保正文区域也是白底 */
+}
 .post-type-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .pt { font-size: 13px; padding: 6px 14px; border-radius: 20px; background: #F1F5F1; color: var(--text2); cursor: pointer; }
 .pt.active { background: var(--green); color: #fff; }
