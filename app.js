@@ -625,6 +625,26 @@ if (topSearchBtn) {
         else html = '<div class="empty" style="padding:20px">没有找到相关鸟类</div>';
       }
       results.innerHTML = html;
+      // 👇 【新增】监听地点输入框，进行位置定位和10km筛选
+const locationInp = document.getElementById('globalLocationInput');
+if (locationInp) {
+  locationInp.oninput = (e) => {
+    const kw = e.target.value.trim();
+    const foundSpot = SPOTS.find(s => s.name.includes(kw));
+    if (foundSpot) {
+      // 找到地点，把地图中心移过去，半径强制为10km，切到附近模式
+      MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
+      MapView.state.radius = 10;
+      MapView.state.tab = 'near';
+      document.getElementById('modalSearch').classList.remove('show'); // 关掉搜索弹窗
+      App.renderCurrent(); // 刷新地图
+    } else if (kw === '') {
+      // 清空输入框时恢复默认位置
+      MapView.state.center = MapView.state.HOME; 
+      App.renderCurrent();
+    }
+  };
+}
     };
     modal.classList.add('show');
   });
