@@ -551,6 +551,15 @@ const App = (() => {
 
   /* ================= 初始化 ================= */
   function init() {
+    // 绑定顶部搜索图标
+    const topSearchBtn = document.getElementById('topSearchBtn');
+    if (topSearchBtn) {
+      topSearchBtn.addEventListener('click', () => {
+        document.getElementById('globalSearchInput').value = '';
+        document.getElementById('searchResults').innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
+        openModal('modalSearch', '搜索', document.getElementById('modalSearch').querySelector('.modal-body').innerHTML);
+      });
+    }
     // 顶栏时间
     const now = new Date();
     document.getElementById('sbTime').textContent =
