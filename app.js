@@ -551,6 +551,7 @@ const App = (() => {
         <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
           ${isImgAvatar ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
         </div>
+        <!-- 👇 删掉了 capture="camera"，现在会弹出拍照/相册选项 -->
         <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
       </div>
       <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
@@ -578,7 +579,6 @@ const App = (() => {
       switchPage('mine');
     });
   }
-
   function handleAvatarUpload(input) {
     const file = input.files[0];
     if (!file) return;
