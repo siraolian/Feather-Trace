@@ -551,7 +551,7 @@ const App = (() => {
         <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
           ${isImgAvatar ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
         </div>
-        <input type="file" id="avatarUpload" accept="image/*" capture="camera" style="display:none;" onchange="App.handleAvatarUpload(this)">
+        <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
       </div>
       <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
       <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
