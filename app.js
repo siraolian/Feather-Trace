@@ -31,7 +31,7 @@ function switchPage(p) {
   // 判断要显示哪个容器
   let pageId = 'page-comm';
   if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-  else if (['my-birds', 'my-badges', 'offline', 'edit-profile'].includes(p)) pageId = 'page-' + p;
+  else if (['my-birds', 'my-badges', 'offline', 'edit-profile','user-profile'].includes(p)) pageId = 'page-' + p;
   
   document.getElementById(pageId).classList.add('active');
   
@@ -65,6 +65,7 @@ function switchPage(p) {
     else if (current === 'my-badges') renderMyBadges();
     else if (current === 'offline') renderOfflinePage();
     else if (current === 'edit-profile') renderEditProfile();
+    else if (current === 'user-profile') renderUserProfile();
   }
 
   /* ================= 交流区 ================= */
@@ -493,32 +494,79 @@ function renderOfflinePage() {
 function renderEditProfile() {
   const el = document.getElementById('page-edit-profile');
   const u = Store.user();
-  const avatars = ['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'];
+  
+  // 判断当前头像是图片还是emoji
+  const isImgAvatar = u.avatar && (u.avatar.startsWith('data:image') || u.avatar.startsWith('http'));
+
   let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
     <div class="card"><div class="card-title">编辑资料</div>
-    <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
-    <div class="section-title" style="margin:6px 0">选择头像</div>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-      ${avatars.map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
+    
+    <!-- 头像展示区（支持图片和emoji） -->
+    <div style="display:flex; justify-content:center; margin-bottom:15px;">
+      <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
+        ${isImgAvatar ? `< img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
+      </div>
+      <input type="file" id="avatarUpload" accept="image/*" capture="camera" style="display:none;" onchange="App.handleAvatarUpload(this)">
     </div>
-    <button class="btn primary block" id="saveProfile">保存</button></div></div>`;
+    <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
+
+    <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
+    
+    <div class="section-title" style="margin:6px 0">或者选择 Emoji 头像</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+      ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
+    </div>
+    
+    <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
   el.innerHTML = html;
   
-  // 绑定选择头像和保存逻辑
+  // Emoji 选择逻辑
   el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
     el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
     x.style.border = '3px solid var(--green)';
-    x._pick = x.dataset.v;
+    el.dataset.pickedAvatar = x.dataset.v; // 存入dataset备用
   }));
+
+  // 保存按钮逻辑
   el.querySelector('#saveProfile').addEventListener('click', () => {
     const name = el.querySelector('#editName').value.trim();
-    const picked = el.querySelector('[data-ft="avatar"][style*="var(--green)"]');
+    const pickedEmoji = el.dataset.pickedAvatar;
+    
     if (name) { u.name = name; }
-    if (picked && picked.dataset.v) { u.avatar = picked.dataset.v; }
-    Store.saveUser(u); toast('资料已更新'); switchPage('mine');
+    if (pickedEmoji) { u.avatar = pickedEmoji; } // 如果选了emoji就覆盖图片
+    
+    Store.saveUser(u); 
+    toast('资料已更新'); 
+    switchPage('mine');
   });
 }
-
+  // 处理图片上传（压缩后保存为base64）
+function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 200; // 头像不需要太大，200px足够
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale; 
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      const base64 = canvas.toDataURL('image/jpeg', 0.8);
+      const u = Store.user();
+      u.avatar = base64; // 保存为 base64 字符串
+      Store.saveUser(u);
+      
+      toast('头像上传成功');
+      renderEditProfile(); // 重新渲染页面显示新头像
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
   /* ================= VIP ================= */
   function openVip() {
     const u = Store.user();
