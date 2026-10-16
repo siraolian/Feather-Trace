@@ -132,10 +132,19 @@ body {
 #birdMap { display: block; width: 100%; }
 .map-toolbar { display: flex; gap: 8px; padding: 10px 12px 0; flex-wrap: wrap; }
 .map-toolbar .chip {
-  font-size: 12px; padding: 6px 12px; border-radius: 20px; background: #fff;
-  color: var(--text2); cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  font-size: 14px; /* 之前是12px，调大一点 */
+  padding: 8px 16px; /* 内边距也扩大 */
+  border-radius: 20px; 
+  background: #fff;
+  color: var(--text2); 
+  cursor: pointer; 
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
-.map-toolbar .chip.active { background: var(--green); color: #fff; }
+.map-toolbar .chip.active { 
+  background: #95BD39; 
+  color: #fff; 
+  font-weight: 600;
+}
 .map-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text2); padding: 8px 12px 2px; flex-wrap: wrap; }
 .map-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
 
@@ -366,3 +375,5 @@ body {
 }
 #toast.show { display: block; animation: fadeIn .2s; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.top-tabs.hidden { display: none; }
