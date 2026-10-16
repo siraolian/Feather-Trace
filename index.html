@@ -16,17 +16,34 @@
     <span class="sb-right"></span>
   </div>
 
-<!-- 顶部主功能 Tab: 交流 / 地图 / AI识别 / 进度 -->
-<div class="top-tabs-wrapper" style="display: flex; align-items: center; background: #95BD39; padding-right: 10px;">
+<!-- 顶部主功能 Tab -->
+<div class="top-tabs-wrapper" style="display: flex; align-items: center; background: #95BD39; padding-right: 15px;">
   <div class="top-tabs" style="flex:1; background: transparent;">
     <div class="tab" data-tab="comm">交流</div>
     <div class="tab" data-tab="map">地图</div>
     <div class="tab" data-tab="ai">AI识别</div>
     <div class="tab" data-tab="progress">进度</div>
   </div>
-  <!-- 这里加搜索框 -->
-  <input type="text" class="top-search" placeholder="搜索" style="border-radius: 15px; border: none; padding: 5px 10px; font-size: 12px; outline: none; width: 60px;">
+  <!-- 搜索图标按钮 -->
+  <span class="icon-search" id="topSearchBtn" style="color: white; font-size: 20px; cursor: pointer; margin-left: 8px;">🔍</span>
 </div>
+
+<!-- 【新增】全屏搜索弹窗 -->
+<div class="modal" id="modalSearch" style="align-items: flex-start; padding-top: 80px;">
+  <div class="modal-inner" style="width: 90%; max-width: 360px; border-radius: 18px;">
+    <div class="modal-head">
+      <span>搜索</span>
+      <span class="close" data-close="modalSearch">✕</span>
+    </div>
+    <div class="modal-body" style="padding: 15px;">
+      <input type="text" id="globalSearchInput" class="inp" style="margin: 0; font-size: 16px;" placeholder="搜索鸟种、帖子、观测点...">
+      <div id="searchResults" style="margin-top: 15px; min-height: 100px;">
+        <div class="empty" style="padding: 20px;"><div class="e">🔍</div>输入关键词开始搜索</div>
+      </div>
+    </div>
+  </div>
+</div>
+  
   <!-- 主内容区 -->
   <main class="main" id="main">
     <section class="page" id="page-comm"></section>
