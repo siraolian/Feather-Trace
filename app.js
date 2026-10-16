@@ -725,25 +725,34 @@ const App = (() => {
           results.innerHTML = html;
 
           // 监听地点输入框，进行位置定位和10km筛选
-          const locationInp = document.getElementById('globalLocationInput');
-          if (locationInp) {
-            locationInp.oninput = (e) => {
-              const locKw = e.target.value.trim();
-              const foundSpot = SPOTS.find(s => s.name.includes(locKw));
-              if (foundSpot) {
-                MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
-                MapView.state.radius = 10;
-                MapView.state.tab = 'near';
-                document.getElementById('modalSearch').classList.remove('show');
-                App.renderCurrent();
-              } else if (locKw === '') {
-                MapView.state.center = MapView.state.HOME; 
-                App.renderCurrent();
-              }
-            };
-          }
+        
         };
         modal.classList.add('show');
+      });
+    }
+
+        // 👇 【新增】独立监听地点输入框（与搜索逻辑解耦）
+    const locationInp = document.getElementById('globalLocationInput');
+    if (locationInp) {
+      locationInp.addEventListener('input', (e) => {
+        const kw = e.target.value.trim();
+        // 在SPOTS里寻找匹配的地点
+        const foundSpot = SPOTS.find(s => s.name.includes(kw));
+        
+        if (foundSpot) {
+          // 1. 设置地图中心、半径、模式
+          MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
+          MapView.state.radius = 10;
+          MapView.state.tab = 'near';
+          // 2. 关闭搜索弹窗
+          document.getElementById('modalSearch').classList.remove('show');
+          // 3. 直接跳转到地图页，让用户立刻看到结果
+          App.switchPage('map'); 
+        } else if (kw === '') {
+          // 清空输入框时恢复默认位置
+          MapView.state.center = MapView.state.HOME; 
+          App.renderCurrent();
+        }
       });
     }
 
