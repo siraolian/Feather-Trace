@@ -27,6 +27,13 @@ const App = (() => {
   const TOP_TABS = ['comm', 'map', 'ai', 'progress'];
   function switchPage(p) {
     current = p;
+    // 隐藏顶栏逻辑
+    const topTabs = document.querySelector('.top-tabs');
+    if (['shop', 'msg', 'mine'].includes(p)) {
+      topTabs.classList.add('hidden');
+    } else {
+      topTabs.classList.remove('hidden');
+    }
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     document.getElementById('page-' + (TOP_TABS.includes(p) ? p : 'comm')).classList.add('active');
     // 顶部 Tab
