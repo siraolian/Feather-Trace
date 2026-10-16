@@ -377,3 +377,10 @@ body {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .top-tabs.hidden { display: none; }
+
+/* 子页面统一样式 */
+.page-sub { padding: 15px; }
+.page-back-btn {
+  display: inline-block; margin-bottom: 15px; font-size: 14px; color: var(--green);
+  cursor: pointer; font-weight: 600; background: var(--green-light); padding: 6px 12px; border-radius: 20px;
+}
