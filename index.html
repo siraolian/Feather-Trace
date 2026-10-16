@@ -35,8 +35,15 @@
       <span>搜索</span>
       <span class="close" data-close="modalSearch">✕</span>
     </div>
-    <div class="modal-body" style="padding: 15px;">
-      <input type="text" id="globalSearchInput" class="inp" style="margin: 0; font-size: 16px;" placeholder="搜索鸟种、帖子、观测点...">
+   <div class="modal-body" style="padding: 15px;">
+  <!-- 👇 新加的地点输入框 -->
+  <input type="text" id="globalLocationInput" class="inp" style="margin: 0 0 10px 0; font-size: 14px;" placeholder="输入地点（如：沙湖）定位10公里">
+  
+  <input type="text" id="globalSearchInput" class="inp" style="margin: 0; font-size: 16px;" placeholder="搜索鸟种、帖子...">
+  <div id="searchResults" style="margin-top: 15px; min-height: 100px;">
+    <div class="empty" style="padding: 20px;"><div class="e">🔍</div>输入关键词开始搜索</div>
+  </div>
+</div>
       <div id="searchResults" style="margin-top: 15px; min-height: 100px;">
         <div class="empty" style="padding: 20px;"><div class="e">🔍</div>输入关键词开始搜索</div>
       </div>
