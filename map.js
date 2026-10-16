@@ -117,8 +117,12 @@ const MapView = (() => {
     <div style="display:flex; gap:8px;">
       <input type="text" id="mapSearchInput" value="${state.keyword}" placeholder="搜索观测点或鸟种..." style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px 15px; font-size:13px; outline:none;">
     </div>
-    <div style="display:flex; gap:8px;">
-      <select id="mapEnvSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+          <div style="display:flex; gap:8px;">
+          <!-- 👇 新加的搜索框 -->
+          <input type="text" id="mapKeywordInput" value="${state.keyword}" placeholder="输入鸟种/地点" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
+        </div>
+        <div style="display:flex; gap:8px;">
+          <select id="mapEnvSelect" style="flex:1; border:1px solid #ccc; border-radius:20px; padding:8px; font-size:13px; outline:none;">
         <option value="全部" ${state.env === '全部' ? 'selected' : ''}>全部环境</option>
         <option value="湿地" ${state.env === '湿地' ? 'selected' : ''}>湿地</option>
         <option value="湖泊" ${state.env === '湖泊' ? 'selected' : ''}>湖泊</option>
@@ -202,7 +206,19 @@ const MapView = (() => {
   }
 
   function bindEvents(root) {
-    const searchInp = root.querySelector('#mapSearchInput');
+       const searchInp = root.querySelector('#mapSearchInput');
+    // 👇 加上新的输入框监听
+    const kwInp = root.querySelector('#mapKeywordInput');
+    if (kwInp) {
+      kwInp.addEventListener('input', (e) => {
+        state.keyword = e.target.value;
+        // 保持输入框焦点，防止重绘后光标丢失
+        const pos = kwInp.selectionStart;
+        App.renderCurrent();
+        const newInp = document.getElementById('mapKeywordInput');
+        if (newInp) { newInp.focus(); newInp.setSelectionRange(pos, pos); }
+      });
+    }
     const envSel = root.querySelector('#mapEnvSelect');
     const groupSel = root.querySelector('#mapGroupSelect');
 
