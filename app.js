@@ -4,6 +4,47 @@
  *       / 鸟种档案 / 发帖 / 成就 / VIP / 数据持久化
  * ============================================================ */
 
+// 查看用户资料
+function viewUserProfile(authorName) {
+  if (authorName === Store.user().name) { switchPage('mine'); return; } // 如果是自己，直接去我的界面
+  switchPage('user-profile');
+  renderUserProfile(authorName);
+}
+
+function renderUserProfile(authorName) {
+  const el = document.getElementById('page-user-profile');
+  // 从种子数据里找该用户发过的帖子
+  const allPosts = Store.posts();
+  const userPosts = allPosts.filter(p => p.author === authorName);
+  const userObj = RANK_SEED.find(r => r.name === authorName) || { name: authorName, icon: '🐦', birds: 0, likes: 0 };
+  
+  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('comm')">← 返回交流</div>
+    <div class="card" style="display:flex; align-items:center; gap:15px;">
+      <div style="width:60px; height:60px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:30px;">
+        ${userObj.icon}
+      </div>
+      <div>
+        <div style="font-size:18px; font-weight:700;">${escapeHtml(userObj.name)}</div>
+        <div style="font-size:12px; color:var(--text2); margin-top:5px;">累计观鸟：🐦 ${userObj.birds} 种 · 获赞：👍 ${userObj.likes}</div>
+      </div>
+    </div>
+    <div class="section-title" style="margin:15px 0 8px 0;">TA的帖子 (${userPosts.length})</div>
+    <div class="spot-list">`;
+    
+  if (userPosts.length) {
+    userPosts.forEach(p => {
+      html += `<div class="spot-item">
+        <div class="spot-name">📝 ${escapeHtml(p.title)}</div>
+        <div class="spot-meta"><span>${p.time}</span><span>👍 ${p.likes}</span></div>
+      </div>`;
+    });
+  } else {
+    html += `<div class="empty"><div class="e">📝</div>该用户暂无帖子</div>`;
+  }
+  html += `</div></div>`;
+  el.innerHTML = html;
+}
+
 /* 全局弹窗关闭（供 map.js / ai.js 等模块调用） */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
@@ -96,7 +137,7 @@ function switchPage(p) {
     return list.map(p => `
       <div class="post-card">
         <div class="post-head">
-          <span class="avatar">${p.avatar}</span>
+          <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">${p.avatar && p.avatar.startsWith('data:image') ? `< img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}</span>
           <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
           <span class="tag">${typeName(p.type)}</span>
         </div>
@@ -660,6 +701,11 @@ if (topSearchBtn) {
       if (!kw) { results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>'; return; }
       
       let html = '';
+      // 搜索用户
+const users = RANK_SEED.filter(u => u.name.includes(kw));
+if(users.length) {
+  html += users.map(u => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.viewUserProfile('${u.name}');"><div class="spot-name">👤 ${u.name} (用户)</div></div>`).join('');
+}
       // 如果在交流界面，搜帖子
       if (current === 'comm') {
         const posts = Store.posts().filter(p => p.title.includes(kw) || p.content.includes(kw));
@@ -750,7 +796,7 @@ if (locationInp) {
     else switchPage('comm');
   }
 
-  return { init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, birdById };
+  return { init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, birdById, viewUserProfile };
 })();
 
 /* 启动 */
