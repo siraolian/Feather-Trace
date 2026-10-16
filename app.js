@@ -127,31 +127,35 @@ function switchPage(p) {
     bindPostEvents(el);
   }
 
-  function postListHtml() {
-    const posts = Store.posts();
-    let list;
-    if (commTab === 'follow') list = [...posts].sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.likes - a.likes);
-    else list = posts.filter(p => p.type === commTab);
-    if (!list.length) return `<div class="empty"><div class="e">🪶</div>还没有帖子，点击右下角＋发布第一帖吧！</div>`;
-    const liked = Store.liked(), fished = Store.fished();
-    return list.map(p => `
-      <div class="post-card">
-        <div class="post-head">
-          <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">${p.avatar && p.avatar.startsWith('data:image') ? `< img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}</span>
-          <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
-          <span class="tag">${typeName(p.type)}</span>
-        </div>
-        <div class="post-title">${escapeHtml(p.title)}${p.hot ? '<span class="hot-badge">🔥热门</span>' : ''}</div>
-        <div class="post-content">${escapeHtml(p.content)}</div>
-        ${p.image ? `<img class="post-img" src="${p.image}" alt="帖子图片">` : ''}
-        <div class="post-actions">
-          <span class="pa ${liked.includes(p.id) ? 'on' : ''}" data-ft="like" data-id="${p.id}">👍 <b>${p.likes}</b></span>
-          <span class="pa" data-ft="comment" data-id="${p.id}">💬 <b>${p.comments}</b></span>
-          <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" data-ft="fish" data-id="${p.id}">🐟 <b>${p.fish}</b></span>
-          <span class="pa" data-ft="share-post" data-id="${p.id}" style="margin-left:auto">↗ 分享</span>
-        </div>
-      </div>`).join('');
-  }
+ function postListHtml() {
+  const posts = Store.posts();
+  let list;
+  if (commTab === 'follow') list = [...posts].sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.likes - a.likes);
+  else list = posts.filter(p => p.type === commTab);
+  if (!list.length) return `<div class="empty"><div class="e">🪶</div>还没有帖子，点击右下角＋发布第一帖吧！</div>`;
+  const liked = Store.liked(), fished = Store.fished();
+  
+  return list.map(p => `
+    <div class="post-card">
+      <div class="post-head">
+        <!-- 👇 头像加了 onclick 和图片兼容 -->
+        <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">
+          ${p.avatar && p.avatar.startsWith('data:image') ? `< img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}
+        </span>
+        <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
+        <span class="tag">${typeName(p.type)}</span>
+      </div>
+      <div class="post-title">${escapeHtml(p.title)}${p.hot ? '<span class="hot-badge">🔥热门</span>' : ''}</div>
+      <div class="post-content">${escapeHtml(p.content)}</div>
+      ${p.image ? `< img class="post-img" src="${p.image}" alt="帖子图片">` : ''}
+      <div class="post-actions">
+        <span class="pa ${liked.includes(p.id) ? 'on' : ''}" data-ft="like" data-id="${p.id}">👍 <b>${p.likes}</b></span>
+        <span class="pa" data-ft="comment" data-id="${p.id}">💬 <b>${p.comments}</b></span>
+        <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" data-ft="fish" data-id="${p.id}">🐟 <b>${p.fish}</b></span>
+        <span class="pa" data-ft="share-post" data-id="${p.id}" style="margin-left:auto">↗ 分享</span>
+      </div>
+    </div>`).join('');
+}
 
   function typeName(t) {
     return { share: '分享', guide: '攻略', qa: '问答', region: '地区' }[t] || t;
