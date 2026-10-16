@@ -4,53 +4,13 @@
  *       / 鸟种档案 / 发帖 / 成就 / VIP / 数据持久化
  * ============================================================ */
 
-// 查看用户资料
-function viewUserProfile(authorName) {
-  if (authorName === Store.user().name) { switchPage('mine'); return; } // 如果是自己，直接去我的界面
-  switchPage('user-profile');
-  renderUserProfile(authorName);
-}
-
-function renderUserProfile(authorName) {
-  const el = document.getElementById('page-user-profile');
-  // 从种子数据里找该用户发过的帖子
-  const allPosts = Store.posts();
-  const userPosts = allPosts.filter(p => p.author === authorName);
-  const userObj = RANK_SEED.find(r => r.name === authorName) || { name: authorName, icon: '🐦', birds: 0, likes: 0 };
-  
-  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('comm')">← 返回交流</div>
-    <div class="card" style="display:flex; align-items:center; gap:15px;">
-      <div style="width:60px; height:60px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:30px;">
-        ${userObj.icon}
-      </div>
-      <div>
-        <div style="font-size:18px; font-weight:700;">${escapeHtml(userObj.name)}</div>
-        <div style="font-size:12px; color:var(--text2); margin-top:5px;">累计观鸟：🐦 ${userObj.birds} 种 · 获赞：👍 ${userObj.likes}</div>
-      </div>
-    </div>
-    <div class="section-title" style="margin:15px 0 8px 0;">TA的帖子 (${userPosts.length})</div>
-    <div class="spot-list">`;
-    
-  if (userPosts.length) {
-    userPosts.forEach(p => {
-      html += `<div class="spot-item">
-        <div class="spot-name">📝 ${escapeHtml(p.title)}</div>
-        <div class="spot-meta"><span>${p.time}</span><span>👍 ${p.likes}</span></div>
-      </div>`;
-    });
-  } else {
-    html += `<div class="empty"><div class="e">📝</div>该用户暂无帖子</div>`;
-  }
-  html += `</div></div>`;
-  el.innerHTML = html;
-}
-
 /* 全局弹窗关闭（供 map.js / ai.js 等模块调用） */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 const App = (() => {
 
   let current = 'comm'; // comm / map / ai / progress / shop / msg / mine
+  let currentProfileName = ''; // 记录当前正在看谁的个人资料
 
   /* ================= 工具 ================= */
   function escapeHtml(s) {
@@ -66,35 +26,48 @@ const App = (() => {
 
   /* ================= 页面切换 ================= */
   const TOP_TABS = ['comm', 'map', 'ai', 'progress'];
-function switchPage(p) {
-  current = p;
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  // 判断要显示哪个容器
-  let pageId = 'page-comm';
-  if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-  else if (['my-birds', 'my-badges', 'offline', 'edit-profile','user-profile'].includes(p)) pageId = 'page-' + p;
-  
-  document.getElementById(pageId).classList.add('active');
-  
-  // 顶栏和底部导航的 active 状态逻辑
-  document.querySelectorAll('.top-tabs .tab').forEach(el => {
-    el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
-  });
-  document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
-    const tab = el.dataset.tab;
-    let active = false;
-    if (tab === 'home') active = TOP_TABS.includes(p);
-    else if (tab === 'mine') active = ['mine', 'my-birds', 'my-badges', 'offline', 'edit-profile'].includes(p);
-    else active = tab === p;
-    el.classList.toggle('active', active);
-  });
-  renderCurrent();
-}
+  function switchPage(p) {
+    current = p;
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    
+    // 判断要显示哪个容器
+    let pageId = 'page-comm';
+    if (TOP_TABS.includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p)) pageId = 'page-' + p;
+    
+    const targetEl = document.getElementById(pageId);
+    if (targetEl) targetEl.classList.add('active');
+    
+    // 顶栏和底部导航的 active 状态逻辑
+    document.querySelectorAll('.top-tabs .tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
+    });
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
+      const tab = el.dataset.tab;
+      let active = false;
+      if (tab === 'home') active = TOP_TABS.includes(p);
+      else if (tab === 'mine') active = ['mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p);
+      else active = tab === p;
+      el.classList.toggle('active', active);
+    });
+    
+    // 隐藏顶部导航栏逻辑
+    const topTabs = document.querySelector('.top-tabs-wrapper');
+    if (topTabs) {
+      if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p)) {
+        topTabs.classList.add('hidden');
+      } else {
+        topTabs.classList.remove('hidden');
+      }
+    }
+    
+    renderCurrent();
+  }
 
   function renderCurrent() {
-    // 售卖/信息/我的 复用 page-comm 容器（底部导航页）
     const containerId = TOP_TABS.includes(current) ? 'page-' + current : 'page-comm';
     const el = document.getElementById(containerId);
+    
     if (current === 'comm') renderComm(el);
     else if (current === 'map') { MapView.render(el); MapView.useGeolocation(); }
     else if (current === 'ai') AI.render(el);
@@ -106,11 +79,11 @@ function switchPage(p) {
     else if (current === 'my-badges') renderMyBadges();
     else if (current === 'offline') renderOfflinePage();
     else if (current === 'edit-profile') renderEditProfile();
-    else if (current === 'user-profile') renderUserProfile();
+    else if (current === 'user-profile') renderUserProfile(currentProfileName);
   }
 
   /* ================= 交流区 ================= */
-  let commTab = 'follow'; // follow关注 / region地区 / guide攻略 / share分享 / qa问答
+  let commTab = 'follow';
 
   function renderComm(el) {
     const tabs = [
@@ -127,35 +100,34 @@ function switchPage(p) {
     bindPostEvents(el);
   }
 
- function postListHtml() {
-  const posts = Store.posts();
-  let list;
-  if (commTab === 'follow') list = [...posts].sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.likes - a.likes);
-  else list = posts.filter(p => p.type === commTab);
-  if (!list.length) return `<div class="empty"><div class="e">🪶</div>还没有帖子，点击右下角＋发布第一帖吧！</div>`;
-  const liked = Store.liked(), fished = Store.fished();
-  
-  return list.map(p => `
-    <div class="post-card">
-      <div class="post-head">
-        <!-- 👇 头像加了 onclick 和图片兼容 -->
-        <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">
-          ${p.avatar && p.avatar.startsWith('data:image') ? `< img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}
-        </span>
-        <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
-        <span class="tag">${typeName(p.type)}</span>
-      </div>
-      <div class="post-title">${escapeHtml(p.title)}${p.hot ? '<span class="hot-badge">🔥热门</span>' : ''}</div>
-      <div class="post-content">${escapeHtml(p.content)}</div>
-      ${p.image ? `< img class="post-img" src="${p.image}" alt="帖子图片">` : ''}
-      <div class="post-actions">
-        <span class="pa ${liked.includes(p.id) ? 'on' : ''}" data-ft="like" data-id="${p.id}">👍 <b>${p.likes}</b></span>
-        <span class="pa" data-ft="comment" data-id="${p.id}">💬 <b>${p.comments}</b></span>
-        <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" data-ft="fish" data-id="${p.id}">🐟 <b>${p.fish}</b></span>
-        <span class="pa" data-ft="share-post" data-id="${p.id}" style="margin-left:auto">↗ 分享</span>
-      </div>
-    </div>`).join('');
-}
+  function postListHtml() {
+    const posts = Store.posts();
+    let list;
+    if (commTab === 'follow') list = [...posts].sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.likes - a.likes);
+    else list = posts.filter(p => p.type === commTab);
+    if (!list.length) return `<div class="empty"><div class="e">🪶</div>还没有帖子，点击右下角＋发布第一帖吧！</div>`;
+    const liked = Store.liked(), fished = Store.fished();
+    
+    return list.map(p => `
+      <div class="post-card">
+        <div class="post-head">
+          <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">
+            ${p.avatar && p.avatar.startsWith('data:image') ? `<img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}
+          </span>
+          <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
+          <span class="tag">${typeName(p.type)}</span>
+        </div>
+        <div class="post-title">${escapeHtml(p.title)}${p.hot ? '<span class="hot-badge">🔥热门</span>' : ''}</div>
+        <div class="post-content">${escapeHtml(p.content)}</div>
+        ${p.image ? `<img class="post-img" src="${p.image}" alt="帖子图片">` : ''}
+        <div class="post-actions">
+          <span class="pa ${liked.includes(p.id) ? 'on' : ''}" data-ft="like" data-id="${p.id}">👍 <b>${p.likes}</b></span>
+          <span class="pa" data-ft="comment" data-id="${p.id}">💬 <b>${p.comments}</b></span>
+          <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" data-ft="fish" data-id="${p.id}">🐟 <b>${p.fish}</b></span>
+          <span class="pa" data-ft="share-post" data-id="${p.id}" style="margin-left:auto">↗ 分享</span>
+        </div>
+      </div>`).join('');
+  }
 
   function typeName(t) {
     return { share: '分享', guide: '攻略', qa: '问答', region: '地区' }[t] || t;
@@ -170,7 +142,6 @@ function switchPage(p) {
           p.likes--; Store.saveLiked(liked.filter(x => x !== id));
         } else {
           p.likes++; liked.push(id); Store.saveLiked(liked);
-          // 模拟他人给"我的帖子"点赞 → 获赞成就
           if (Store.myPosts().includes(id)) addLikesReceived(1);
         }
         Store.savePosts(posts);
@@ -205,7 +176,6 @@ function switchPage(p) {
   function refreshComm() {
     const el = document.getElementById('page-comm');
     if (current === 'comm') el.innerHTML = `<div class="post-area">${postListHtml()}</div><div class="fab" id="fabPost">＋</div>`;
-    // 重新绑定（简单方式：重渲染整页保持 tab）
     renderComm(el);
   }
 
@@ -253,6 +223,47 @@ function switchPage(p) {
     commTab = type; refreshComm();
   }
 
+  /* ================= 用户资料 ================= */
+  function viewUserProfile(authorName) {
+    if (authorName === Store.user().name) { switchPage('mine'); return; }
+    currentProfileName = authorName;
+    switchPage('user-profile');
+  }
+
+  function renderUserProfile(authorName) {
+    if (!authorName) return;
+    const el = document.getElementById('page-user-profile');
+    const allPosts = Store.posts();
+    const userPosts = allPosts.filter(p => p.author === authorName);
+    const userObj = RANK_SEED.find(r => r.name === authorName) || { name: authorName, icon: '🐦', birds: 0, likes: 0 };
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('comm')">← 返回交流</div>
+      <div class="card" style="display:flex; align-items:center; gap:15px;">
+        <div style="width:60px; height:60px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:30px;">
+          ${userObj.icon}
+        </div>
+        <div>
+          <div style="font-size:18px; font-weight:700;">${escapeHtml(userObj.name)}</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:5px;">累计观鸟：🐦 ${userObj.birds} 种 · 获赞：👍 ${userObj.likes}</div>
+        </div>
+      </div>
+      <div class="section-title" style="margin:15px 0 8px 0;">TA的帖子 (${userPosts.length})</div>
+      <div class="spot-list">`;
+      
+    if (userPosts.length) {
+      userPosts.forEach(p => {
+        html += `<div class="spot-item">
+          <div class="spot-name">📝 ${escapeHtml(p.title)}</div>
+          <div class="spot-meta"><span>${p.time}</span><span>👍 ${p.likes}</span></div>
+        </div>`;
+      });
+    } else {
+      html += `<div class="empty"><div class="e">📝</div>该用户暂无帖子</div>`;
+    }
+    html += `</div></div>`;
+    el.innerHTML = html;
+  }
+
   /* ================= 成就 / 进度 ================= */
   function addLikesReceived(n) {
     const u = Store.user(); u.likesReceived += n; Store.saveUser(u);
@@ -294,7 +305,6 @@ function switchPage(p) {
     const u = Store.user();
     const ach = achieveState();
     const doneCount = ach.filter(a => a.done).length;
-    const birds = Store.birds();
     const expNeed = u.level * 100;
     let html = `
       <div class="level-card">
@@ -371,7 +381,6 @@ function switchPage(p) {
 
   /* ================= 售卖 ================= */
   function renderShop(el) {
-    const u = Store.user();
     let html = `
       <div class="card" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3)">
         <div class="card-title" style="color:#B26A00">🎯 观鸟装备 · 精准推荐</div>
@@ -432,7 +441,7 @@ function switchPage(p) {
     const ach = achieveState().filter(a => a.done);
     let html = `
       <div class="mine-head" style="cursor: pointer;">
-        <span class="avatar">${u.avatar}</span>
+        <span class="avatar">${u.avatar && u.avatar.startsWith('data:image') ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : u.avatar}</span>
         <div>
           <div class="mine-name">${escapeHtml(u.name)}</div>
           <div class="mine-code">账号码 ${u.code}</div>
@@ -472,146 +481,129 @@ function switchPage(p) {
     el.innerHTML = html;
     el.querySelectorAll('[data-ft="open-vip"]').forEach(x => x.addEventListener('click', openVip));
     el.querySelectorAll('[data-ft="my-posts"]').forEach(x => x.addEventListener('click', () => toast('已在下方展示你的帖子')));
-  // 点击跳转到独立页面（不再使用弹窗）
-el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-birds')));
-el.querySelectorAll('[data-ft="my-badges"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-badges')));
-el.querySelectorAll('[data-ft="offline"]').forEach(x => x.addEventListener('click', () => App.switchPage('offline')));
-el.querySelectorAll('[data-ft="edit-profile"]').forEach(x => x.addEventListener('click', () => App.switchPage('edit-profile')));
-
-// 重置演示数据（保持不变）
-el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
-  if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
-}));
-
-// 点击头像区域，也跳转到资料编辑页
-el.querySelector('.mine-head').addEventListener('click', () => App.switchPage('edit-profile'));
+    el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-birds')));
+    el.querySelectorAll('[data-ft="my-badges"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-badges')));
+    el.querySelectorAll('[data-ft="offline"]').forEach(x => x.addEventListener('click', () => App.switchPage('offline')));
+    el.querySelectorAll('[data-ft="edit-profile"]').forEach(x => x.addEventListener('click', () => App.switchPage('edit-profile')));
+    el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
+      if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
+    }));
+    el.querySelector('.mine-head').addEventListener('click', () => App.switchPage('edit-profile'));
   }
 
- /* 新增：独立页面的渲染函数 */
-function renderMyBirds() {
-  const el = document.getElementById('page-my-birds');
-  const birds = Store.birds().map(birdById).filter(Boolean);
-  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>`;
-  if (birds.length) {
-    html += `<div class="ai-cards">${birds.map(b => `
-      <div class="ai-card" data-ft="bird-open" data-id="${b.id}">
-        <div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div>
-      </div>`).join('')}</div>`;
-  } else {
-    html += `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
+  /* ================= 独立页面渲染函数 ================= */
+  function renderMyBirds() {
+    const el = document.getElementById('page-my-birds');
+    const birds = Store.birds().map(birdById).filter(Boolean);
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>`;
+    if (birds.length) {
+      html += `<div class="ai-cards">${birds.map(b => `
+        <div class="ai-card" data-ft="bird-open" data-id="${b.id}">
+          <div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div>
+        </div>`).join('')}</div>`;
+    } else {
+      html += `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
+    }
+    html += `</div>`;
+    el.innerHTML = html;
+    el.querySelectorAll('[data-ft="bird-open"]').forEach(x => x.addEventListener('click', () => App.openBird(x.dataset.id)));
   }
-  html += `</div>`;
-  el.innerHTML = html;
-  el.querySelectorAll('[data-ft="bird-open"]').forEach(x => x.addEventListener('click', () => App.openBird(x.dataset.id)));
-}
 
-function renderMyBadges() {
-  const el = document.getElementById('page-my-badges');
-  const ach = achieveState();
-  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-    <div class="section-title">🏅 我的徽章 (${ach.filter(a=>a.done).length}/${ach.length})</div>
-    <div class="spot-list">`;
-  ach.forEach(a => {
-    html += `<div class="ach-card">
-      <div class="ach-icon ${a.done ? '' : 'locked'}">${a.icon}</div>
-      <div class="ach-info"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
-      <div class="ach-state">${a.done ? '✓ 已解锁' : `${a.cur}/${a.target}`}</div>
-    </div>`;
-  });
-  html += `</div></div>`;
-  el.innerHTML = html;
-}
+  function renderMyBadges() {
+    const el = document.getElementById('page-my-badges');
+    const ach = achieveState();
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="section-title">🏅 我的徽章 (${ach.filter(a=>a.done).length}/${ach.length})</div>
+      <div class="spot-list">`;
+    ach.forEach(a => {
+      html += `<div class="ach-card">
+        <div class="ach-icon ${a.done ? '' : 'locked'}">${a.icon}</div>
+        <div class="ach-info"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
+        <div class="ach-state">${a.done ? '✓ 已解锁' : `${a.cur}/${a.target}`}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+    el.innerHTML = html;
+  }
 
-function renderOfflinePage() {
-  const el = document.getElementById('page-offline');
-  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-    <div class="card"><div class="card-title">📴 离线能力（已就绪）</div>
-    <div class="card-sub">本应用数据与功能全部内置，无网络也可使用</div></div>
-    <div class="vip-item"><span class="vi">🗺️</span><span>离线地图：内置武汉及周边 12 个观测点</span></div>
-    <div class="vip-item"><span class="vi">📚</span><span>离线物种库：25 种常见鸟类完整档案</span></div>
-    <div class="vip-item"><span class="vi">🤖</span><span>离线 AI 识别：本地特征匹配识别</span></div>
-    <div class="vip-item"><span class="vi">💾</span><span>数据本地存储：帖子/收藏/成就不丢失</span></div>
-    <button class="btn primary block mt12" onclick="App.openVip()">升级 VIP 解锁更多离线包</button>
-    </div>`;
-  el.innerHTML = html;
-}
+  function renderOfflinePage() {
+    const el = document.getElementById('page-offline');
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="card"><div class="card-title">📴 离线能力（已就绪）</div>
+      <div class="card-sub">本应用数据与功能全部内置，无网络也可使用</div></div>
+      <div class="vip-item"><span class="vi">🗺️</span><span>离线地图：内置武汉及周边 12 个观测点</span></div>
+      <div class="vip-item"><span class="vi">📚</span><span>离线物种库：25 种常见鸟类完整档案</span></div>
+      <div class="vip-item"><span class="vi">🤖</span><span>离线 AI 识别：本地特征匹配识别</span></div>
+      <div class="vip-item"><span class="vi">💾</span><span>数据本地存储：帖子/收藏/成就不丢失</span></div>
+      <button class="btn primary block mt12" onclick="App.openVip()">升级 VIP 解锁更多离线包</button>
+      </div>`;
+    el.innerHTML = html;
+  }
 
-function renderEditProfile() {
-  const el = document.getElementById('page-edit-profile');
-  const u = Store.user();
-  
-  // 判断当前头像是图片还是emoji
-  const isImgAvatar = u.avatar && (u.avatar.startsWith('data:image') || u.avatar.startsWith('http'));
+  function renderEditProfile() {
+    const el = document.getElementById('page-edit-profile');
+    const u = Store.user();
+    const isImgAvatar = u.avatar && (u.avatar.startsWith('data:image') || u.avatar.startsWith('http'));
 
-  let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-    <div class="card"><div class="card-title">编辑资料</div>
-    
-    <!-- 头像展示区（支持图片和emoji） -->
-    <div style="display:flex; justify-content:center; margin-bottom:15px;">
-      <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
-        ${isImgAvatar ? `< img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="card"><div class="card-title">编辑资料</div>
+      <div style="display:flex; justify-content:center; margin-bottom:15px;">
+        <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
+          ${isImgAvatar ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
+        </div>
+        <input type="file" id="avatarUpload" accept="image/*" capture="camera" style="display:none;" onchange="App.handleAvatarUpload(this)">
       </div>
-      <input type="file" id="avatarUpload" accept="image/*" capture="camera" style="display:none;" onchange="App.handleAvatarUpload(this)">
-    </div>
-    <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
+      <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
+      <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
+      <div class="section-title" style="margin:6px 0">或者选择 Emoji 头像</div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+        ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
+      </div>
+      <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
+    el.innerHTML = html;
+    
+    el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
+      el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
+      x.style.border = '3px solid var(--green)';
+      el.dataset.pickedAvatar = x.dataset.v;
+    }));
 
-    <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
-    
-    <div class="section-title" style="margin:6px 0">或者选择 Emoji 头像</div>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-      ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
-    </div>
-    
-    <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
-  el.innerHTML = html;
-  
-  // Emoji 选择逻辑
-  el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
-    el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
-    x.style.border = '3px solid var(--green)';
-    el.dataset.pickedAvatar = x.dataset.v; // 存入dataset备用
-  }));
+    el.querySelector('#saveProfile').addEventListener('click', () => {
+      const name = el.querySelector('#editName').value.trim();
+      const pickedEmoji = el.dataset.pickedAvatar;
+      if (name) { u.name = name; }
+      if (pickedEmoji) { u.avatar = pickedEmoji; }
+      Store.saveUser(u); 
+      toast('资料已更新'); 
+      switchPage('mine');
+    });
+  }
 
-  // 保存按钮逻辑
-  el.querySelector('#saveProfile').addEventListener('click', () => {
-    const name = el.querySelector('#editName').value.trim();
-    const pickedEmoji = el.dataset.pickedAvatar;
-    
-    if (name) { u.name = name; }
-    if (pickedEmoji) { u.avatar = pickedEmoji; } // 如果选了emoji就覆盖图片
-    
-    Store.saveUser(u); 
-    toast('资料已更新'); 
-    switchPage('mine');
-  });
-}
-  // 处理图片上传（压缩后保存为base64）
-function handleAvatarUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const maxW = 200; // 头像不需要太大，200px足够
-      const scale = Math.min(1, maxW / img.width);
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width * scale; 
-      canvas.height = img.height * scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      
-      const base64 = canvas.toDataURL('image/jpeg', 0.8);
-      const u = Store.user();
-      u.avatar = base64; // 保存为 base64 字符串
-      Store.saveUser(u);
-      
-      toast('头像上传成功');
-      renderEditProfile(); // 重新渲染页面显示新头像
+  function handleAvatarUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 200;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale; 
+        canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+        const u = Store.user();
+        u.avatar = base64;
+        Store.saveUser(u);
+        toast('头像上传成功');
+        renderEditProfile();
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+    reader.readAsDataURL(file);
+  }
+
   /* ================= VIP ================= */
   function openVip() {
     const u = Store.user();
@@ -683,70 +675,78 @@ function handleAvatarUpload(input) {
 
   /* ================= 初始化 ================= */
   function init() {
-   // 顶部搜索全局绑定
-const topSearchBtn = document.getElementById('topSearchBtn');
-if (topSearchBtn) {
-  topSearchBtn.addEventListener('click', () => {
-    const modal = document.getElementById('modalSearch');
-    const input = document.getElementById('globalSearchInput');
-    const results = document.getElementById('searchResults');
-    input.value = '';
-    results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
-    
-    // 根据当前所在的页面，改变搜索提示词
-    if (current === 'comm') input.placeholder = '搜索交流区帖子...';
-    else if (current === 'map') input.placeholder = '搜索观测点或鸟种...';
-    else if (current === 'ai') input.placeholder = '搜索鸟类知识...';
-    else input.placeholder = '搜索当前页面...';
+    // 顶部搜索全局绑定
+    const topSearchBtn = document.getElementById('topSearchBtn');
+    if (topSearchBtn) {
+      topSearchBtn.addEventListener('click', () => {
+        const modal = document.getElementById('modalSearch');
+        const input = document.getElementById('globalSearchInput');
+        const results = document.getElementById('searchResults');
+        input.value = '';
+        results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
+        
+        if (current === 'comm') input.placeholder = '搜索交流区帖子或用户...';
+        else if (current === 'map') input.placeholder = '搜索观测点或鸟种...';
+        else if (current === 'ai') input.placeholder = '搜索鸟类知识...';
+        else input.placeholder = '搜索当前页面...';
 
-    // 监听输入事件，开始过滤
-    input.oninput = (e) => {
-      const kw = e.target.value.trim();
-      if (!kw) { results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>'; return; }
-      
-      let html = '';
-      // 搜索用户
-const users = RANK_SEED.filter(u => u.name.includes(kw));
-if(users.length) {
-  html += users.map(u => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.viewUserProfile('${u.name}');"><div class="spot-name">👤 ${u.name} (用户)</div></div>`).join('');
-}
-      // 如果在交流界面，搜帖子
-      if (current === 'comm') {
-        const posts = Store.posts().filter(p => p.title.includes(kw) || p.content.includes(kw));
-        if(posts.length) html = posts.map(p => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.toast('跳转到帖子详情（演示）');"><div class="spot-name">📝 ${escapeHtml(p.title)}</div><div class="post-content" style="font-size:12px;">${escapeHtml(p.content).slice(0, 50)}...</div></div>`).join('');
-        else html = '<div class="empty" style="padding:20px">没有找到相关帖子</div>';
-      }
-      // 如果在AI界面或地图界面，搜鸟类数据
-      else if (current === 'map' || current === 'ai') {
-        const birds = BIRDS.filter(b => b.name.includes(kw) || b.features.includes(kw));
-        if(birds.length) html = birds.map(b => `<div class="ai-card" onclick="document.getElementById('modalSearch').classList.remove('show'); App.openBird('${b.id}');"><div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div></div>`).join('');
-        else html = '<div class="empty" style="padding:20px">没有找到相关鸟类</div>';
-      }
-      results.innerHTML = html;
-      // 👇 【新增】监听地点输入框，进行位置定位和10km筛选
-const locationInp = document.getElementById('globalLocationInput');
-if (locationInp) {
-  locationInp.oninput = (e) => {
-    const kw = e.target.value.trim();
-    const foundSpot = SPOTS.find(s => s.name.includes(kw));
-    if (foundSpot) {
-      // 找到地点，把地图中心移过去，半径强制为10km，切到附近模式
-      MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
-      MapView.state.radius = 10;
-      MapView.state.tab = 'near';
-      document.getElementById('modalSearch').classList.remove('show'); // 关掉搜索弹窗
-      App.renderCurrent(); // 刷新地图
-    } else if (kw === '') {
-      // 清空输入框时恢复默认位置
-      MapView.state.center = MapView.state.HOME; 
-      App.renderCurrent();
+        input.oninput = (e) => {
+          const kw = e.target.value.trim();
+          if (!kw) { 
+            results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>'; 
+            return; 
+          }
+          
+          let html = '';
+
+          // 1. 搜索用户
+          const users = RANK_SEED.filter(u => u.name.includes(kw));
+          if (users.length) {
+            html += users.map(u => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.viewUserProfile('${u.name}');"><div class="spot-name">👤 ${u.name} (用户)</div></div>`).join('');
+          }
+
+          // 2. 搜索帖子
+          if (current === 'comm' || current === '') {
+            const posts = Store.posts().filter(p => p.title.includes(kw) || p.content.includes(kw));
+            if (posts.length) {
+              html += posts.map(p => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.toast('跳转到帖子详情（演示）');"><div class="spot-name">📝 ${escapeHtml(p.title)}</div><div class="post-content" style="font-size:12px;">${escapeHtml(p.content).slice(0, 50)}...</div></div>`).join('');
+            }
+          }
+
+          // 3. 搜索鸟种
+          if (current === 'map' || current === 'ai') {
+            const birds = BIRDS.filter(b => b.name.includes(kw) || b.features.includes(kw));
+            if (birds.length) {
+              html += birds.map(b => `<div class="ai-card" onclick="document.getElementById('modalSearch').classList.remove('show'); App.openBird('${b.id}');"><div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div></div>`).join('');
+            }
+          }
+
+          if (!html) html = '<div class="empty" style="padding:20px">没有找到相关内容</div>';
+          results.innerHTML = html;
+
+          // 监听地点输入框，进行位置定位和10km筛选
+          const locationInp = document.getElementById('globalLocationInput');
+          if (locationInp) {
+            locationInp.oninput = (e) => {
+              const locKw = e.target.value.trim();
+              const foundSpot = SPOTS.find(s => s.name.includes(locKw));
+              if (foundSpot) {
+                MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
+                MapView.state.radius = 10;
+                MapView.state.tab = 'near';
+                document.getElementById('modalSearch').classList.remove('show');
+                App.renderCurrent();
+              } else if (locKw === '') {
+                MapView.state.center = MapView.state.HOME; 
+                App.renderCurrent();
+              }
+            };
+          }
+        };
+        modal.classList.add('show');
+      });
     }
-  };
-}
-    };
-    modal.classList.add('show');
-  });
-}
+
     // 顶栏时间
     const now = new Date();
     document.getElementById('sbTime').textContent =
@@ -794,13 +794,16 @@ if (locationInp) {
     // 发布
     document.getElementById('postSubmit').addEventListener('click', submitPost);
 
-    // 支持 URL hash 直达页面（便于演示与调试）：index.html#map
+    // 支持 URL hash 直达页面
     const h = location.hash.replace('#', '');
     if (['comm', 'map', 'ai', 'progress', 'shop', 'msg', 'mine'].includes(h)) switchPage(h);
     else switchPage('comm');
   }
 
-  return { init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, birdById, viewUserProfile };
+  return { 
+    init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
+    birdById, viewUserProfile, handleAvatarUpload 
+  };
 })();
 
 /* 启动 */
