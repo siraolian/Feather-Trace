@@ -254,13 +254,22 @@ const MapView = (() => {
     }
 
     // 列表和地图的点击弹窗绑定
+        // 列表和地图的点击弹窗绑定
     root.querySelectorAll('[data-ft="spot-open"]').forEach(el => {
       el.addEventListener('click', () => openSpot(el.dataset.id));
     });
-    root.querySelectorAll('.spot-marker').forEach(el => {
-      el.addEventListener('click', () => openSpot(el.dataset.spot));
-    });
-  }
+    
+    // 👇 用事件代理的方式绑定地图 SVG 点，防止重绘后事件丢失
+    const mapWrap = root.querySelector('.map-wrap');
+    if (mapWrap) {
+      mapWrap.addEventListener('click', (e) => {
+        // 向上查找是否有带 data-spot 属性的父元素
+        const marker = e.target.closest('.spot-marker');
+        if (marker && marker.dataset.spot) {
+          openSpot(marker.dataset.spot);
+        }
+      });
+    }
 
   /* 观测点详情弹窗 */
   function openSpot(id) {
@@ -269,7 +278,7 @@ const MapView = (() => {
     const html = `
       <div class="info-block"><b>📍 ${s.name}</b> · ${s.env} · ${s.level}</div>
       <div class="info-block">${s.desc}</div>
-      <div class="info-block"><b>📌 数据</b>：${s.uploads} 条用户观测记录（平台用户上传 + 网络资料整理）</div>
+      <div class="info-block"><b>📌 数据</b>：${s.uploads} 条用户观测记录</div>
       <div class="section-title" style="margin:6px 0">此观测点常见鸟类（点击查看详情）</div>
       <div class="ai-cards">
         ${birds.map(b => `<div class="ai-card" data-ft="bird-open" data-id="${b.id}">
@@ -280,12 +289,13 @@ const MapView = (() => {
       <div class="gear-ad">
         <div class="ga-title">🎯 装备推荐（软广导流）</div>
         <div>观察${s.name}周边环境，推荐「${birds[0] ? birds[0].equipment : '8×42双筒望远镜'}」</div>
-        <a class="ga-btn" href=" " target="_blank" rel="noopener">去京东看看 →</a >
+        <a class="ga-btn" href="https://www.jd.com" target="_blank" rel="noopener">去京东看看 →</a>
       </div>`;
     
-    // 如果 modalSpot 不存在，就动态创建一个（防止 index.html 没写）
+    // 👇 使用更稳健的方式获取弹窗元素
     let modalSpot = document.getElementById('modalSpot');
     if (!modalSpot) {
+      // 如果 index.html 里没有，动态创建
       modalSpot = document.createElement('div');
       modalSpot.id = 'modalSpot';
       modalSpot.className = 'modal';
@@ -293,13 +303,21 @@ const MapView = (() => {
       document.body.appendChild(modalSpot);
     }
 
-    document.getElementById('spotModalTitle').textContent = s.name;
-    document.getElementById('spotModalBody').innerHTML = html;
+    const titleEl = document.getElementById('spotModalTitle');
+    const bodyEl = document.getElementById('spotModalBody');
+    if (titleEl) titleEl.textContent = s.name;
+    if (bodyEl) bodyEl.innerHTML = html;
+    
     modalSpot.classList.add('show');
     
-    document.getElementById('spotModalBody').querySelectorAll('[data-ft="bird-open"]').forEach(el => {
-      el.addEventListener('click', () => { modalSpot.classList.remove('show'); App.openBird(el.dataset.id); });
-    });
+    if (bodyEl) {
+      bodyEl.querySelectorAll('[data-ft="bird-open"]').forEach(el => {
+        el.addEventListener('click', () => { 
+          modalSpot.classList.remove('show'); 
+          if (window.App && App.openBird) App.openBird(el.dataset.id); 
+        });
+      });
+    }
   }
 
   function useGeolocation() {
