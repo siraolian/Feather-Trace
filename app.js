@@ -116,6 +116,10 @@ const App = (() => {
     else if (current === 'user-profile') renderUserProfile(currentProfileName);
     else if (current === 'create-post') renderCreatePost();
     else if (current === 'search') renderSearch();
+    else if (current === 'settings') renderSettings();
+    else if (current === 'history') renderHistory();
+    else if (current === 'favorites') renderFavorites();
+    else if (current === 'follow-list') renderFollowList();
   }
 
   /* ================= 交流区 ================= */
@@ -669,58 +673,93 @@ const App = (() => {
     const birds = Store.birds(), posts = Store.myPosts();
     const myPosts = Store.posts().filter(p => posts.includes(p.id));
     const ach = achieveState().filter(a => a.done);
+    
+    // 模拟关注和粉丝数
+    const followingCount = 11;
+    const followersCount = 1;
+
     let html = `
-      <div class="mine-head" style="cursor: pointer;">
-        <span class="avatar">${u.avatar && u.avatar.startsWith('data:image') ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : u.avatar}</span>
+      <div class="mine-head" style="padding-bottom: 30px;">
+        <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 35px;">
+          ${u.avatar && u.avatar.startsWith('data:image') ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : u.avatar}
+        </span>
         <div>
-          <div class="mine-name">${escapeHtml(u.name)}</div>
-          <div class="mine-code">账号码 ${u.code}</div>
-          <span class="mine-vip" data-ft="open-vip">${u.isVip ? '👑 VIP 会员' : '开通 VIP →'}</span>
+          <div class="mine-name" style="font-size: 22px;">${escapeHtml(u.name)}</div>
+          <div class="mine-code" style="margin-top: 8px; color: rgba(255,255,255,0.8);">ID: ${u.code}</div>
+          
+          <div style="display: flex; gap: 15px; margin-top: 10px; color: #fff; font-size: 13px;">
+            <span onclick="App.switchPage('follow-list')" style="cursor: pointer;"><b style="font-size: 16px;">${followersCount}</b> 粉丝</span>
+            <span onclick="App.switchPage('follow-list')" style="cursor: pointer;"><b style="font-size: 16px;">${followingCount}</b> 关注</span>
+            <span><b style="font-size: 16px;">${u.likesReceived}</b> 获赞</span>
+          </div>
         </div>
       </div>
-      <div class="mine-stats">
-        <div class="ms"><b>${birds.length}</b><span>收录鸟种</span></div>
-        <div class="ms"><b>${myPosts.length}</b><span>我的帖子</span></div>
-        <div class="ms"><b>${u.likesReceived}</b><span>累计获赞</span></div>
-        <div class="ms"><b>Lv.${u.level}</b><span>等级</span></div>
+      
+      <!-- 数据统计面板 -->
+      <div class="mine-stats" style="margin-top: -20px; position: relative; z-index: 10; border-radius: 16px; background: #fff;">
+        <div class="ms" onclick="App.switchPage('my-birds')" style="cursor:pointer;"><b>${birds.length}</b><span>收录鸟种</span></div>
+        <div class="ms"><b>${myPosts.length}</b><span>发布帖子</span></div>
+        <div class="ms" onclick="App.switchPage('my-badges')" style="cursor:pointer;"><b>${ach.length}</b><span>获得徽章</span></div>
+        <div class="ms"><b>Lv.${u.level}</b><span>当前等级</span></div>
       </div>
-      <div class="mine-menu">
-        <div class="menu-item" data-ft="my-posts"><span><span class="mi">📝</span>我的帖子</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="my-birds"><span><span class="mi">🐦</span>我的鸟种收藏（${birds.length}种）</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="my-badges"><span><span class="mi">🏅</span>我的徽章（${ach.length}个）</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="open-vip"><span><span class="mi">👑</span>VIP 会员（离线包/声纹识别/云空间）</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="offline"><span><span class="mi">📴</span>离线包管理</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="edit-profile"><span><span class="mi">✏️</span>编辑资料</span><span class="arrow">›</span></div>
-        <div class="menu-item" data-ft="reset"><span><span class="mi">🗑️</span>重置演示数据</span><span class="arrow">›</span></div>
+
+      <!-- 第一组功能卡片 -->
+      <div class="mine-group">
+        <div class="mine-item" onclick="App.switchPage('history')">
+          <div class="left"><div class="icon-box"><i class="ri-history-line"></i></div>浏览记录</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+        <div class="mine-item" onclick="App.switchPage('favorites')">
+          <div class="left"><div class="icon-box"><i class="ri-star-line"></i></div>我的收藏</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+        <div class="mine-item" onclick="toast('已在下方展示你的帖子')">
+          <div class="left"><div class="icon-box"><i class="ri-article-line"></i></div>我的帖子</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+        <div class="mine-item" onclick="App.switchPage('offline')">
+          <div class="left"><div class="icon-box"><i class="ri-download-cloud-line"></i></div>离线包管理</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
       </div>
-      <div class="section-title">📄 我的帖子</div>
-      <div class="post-area">
-        ${myPosts.length ? myPosts.map(p => `
+
+      <!-- 第二组：VIP与设置 -->
+      <div class="mine-group">
+        <div class="mine-item" onclick="App.openVip()">
+          <div class="left"><div class="icon-box" style="color:#FFB300; background:#FFF8E1;"><i class="ri-vip-crown-line"></i></div>VIP 会员</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+        <div class="mine-item" onclick="App.switchPage('settings')">
+          <div class="left"><div class="icon-box"><i class="ri-settings-3-line"></i></div>设置</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+      </div>
+      
+      <!-- 第三组：其他 -->
+      <div class="mine-group" style="margin-bottom: 20px;">
+        <div class="mine-item"><div class="left"><div class="icon-box"><i class="ri-shield-check-line"></i></div>社区公约</div><span class="arrow"><i class="ri-arrow-right-s-line"></i></span></div>
+        <div class="mine-item" onclick="if(confirm('确定重置所有数据吗？')){localStorage.clear();location.reload();}">
+          <div class="left"><div class="icon-box" style="color:#E53935; background:#FFEBEE;"><i class="ri-delete-bin-line"></i></div>重置演示数据</div>
+          <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
+        </div>
+      </div>
+      
+      <div class="section-title">📄 最近发布</div>
+      <div class="post-area" style="margin-bottom: 20px;">
+        ${myPosts.length ? myPosts.slice(0,3).map(p => `
           <div class="post-card">
             <div class="post-head"><span class="avatar">${p.avatar}</span>
               <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
               <span class="tag">${typeName(p.type)}</span></div>
             <div class="post-title">${escapeHtml(p.title)}</div>
             <div class="post-content">${escapeHtml(p.content)}</div>
-            <div class="post-actions">
-              <span class="pa">👍 ${p.likes}</span><span class="pa">💬 ${p.comments}</span><span class="pa">🐟 ${p.fish}</span>
-            </div>
           </div>`).join('')
-        : '<div class="empty"><div class="e">📝</div>还没有发过帖子<br>去「交流」页点右下角＋发布吧</div>'}
-      </div>`;
+        : '<div class="empty" style="padding:20px;"><div class="e">📝</div>还没有发过帖子</div>'}
+      </div>
+    `;
     el.innerHTML = replaceIcons(html);
-    el.querySelectorAll('[data-ft="open-vip"]').forEach(x => x.addEventListener('click', openVip));
-    el.querySelectorAll('[data-ft="my-posts"]').forEach(x => x.addEventListener('click', () => toast('已在下方展示你的帖子')));
-    el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-birds')));
-    el.querySelectorAll('[data-ft="my-badges"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-badges')));
-    el.querySelectorAll('[data-ft="offline"]').forEach(x => x.addEventListener('click', () => App.switchPage('offline')));
-    el.querySelectorAll('[data-ft="edit-profile"]').forEach(x => x.addEventListener('click', () => App.switchPage('edit-profile')));
-    el.querySelectorAll('[data-ft="reset"]').forEach(x => x.addEventListener('click', () => {
-      if (confirm('确定重置所有演示数据吗？（本地数据将被清空）')) { localStorage.clear(); location.reload(); }
-    }));
-    el.querySelector('.mine-head').addEventListener('click', () => App.switchPage('edit-profile'));
   }
-
+  
   /* ================= 独立页面渲染函数 ================= */
   function renderMyBirds() {
     const el = document.getElementById('page-my-birds');
@@ -905,6 +944,10 @@ const App = (() => {
 
   /* ================= 初始化 ================= */
   function init() {
+    if (localStorage.getItem('ft_font_large') === '1') {
+      document.body.classList.add('font-large');
+    }
+    
     const topSearchBtn = document.getElementById('topSearchBtn');
     if (topSearchBtn) {
       topSearchBtn.addEventListener('click', () => App.switchPage('search'));
@@ -942,6 +985,124 @@ const App = (() => {
     else switchPage('comm');
   }
 
+  /* ================= 新增：设置页面 ================= */
+  function renderSettings() {
+    const el = document.getElementById('page-settings');
+    const isLarge = document.body.classList.contains('font-large');
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="mine-group" style="margin: 0;">
+        <div class="mine-item">
+          <div class="left">大字体模式</div>
+          <label class="switch">
+            <input type="checkbox" id="fontToggle" ${isLarge ? 'checked' : ''}>
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="mine-item"><div class="left">清除缓存</div><span class="arrow">›</span></div>
+        <div class="mine-item"><div class="left">关于 Feather Trace</div><span style="color:#888; font-size:13px;">v1.0.0</span></div>
+      </div>
+      <div style="text-align:center; margin-top:30px; color:#888; font-size:12px;">© 2026 Feather Trace Team</div>
+    </div>`;
+    
+    el.innerHTML = html;
+    
+    el.querySelector('#fontToggle').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.body.classList.add('font-large');
+        localStorage.setItem('ft_font_large', '1');
+        toast('已开启大字体模式');
+      } else {
+        document.body.classList.remove('font-large');
+        localStorage.setItem('ft_font_large', '0');
+        toast('已恢复标准字体');
+      }
+    });
+  }
+
+  /* ================= 新增：浏览记录 ================= */
+  function renderHistory() {
+    const el = document.getElementById('page-history');
+    // 这里模拟一些浏览记录
+    const historyData = [
+      { type: 'bird', title: '普通翠鸟', desc: '水鸟 · 较常见', time: '今天 14:30' },
+      { type: 'post', title: '沙湖公园的翠鸟终于蹲到了', desc: '东湖漫游者', time: '昨天' },
+      { type: 'spot', title: '府河湿地', desc: '湿地 · 进阶', time: '10月12日' }
+    ];
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="mine-group" style="margin:0;">`;
+      
+    if (historyData.length === 0) {
+      html += `<div class="empty"><div class="e">🕒</div>暂无浏览记录</div>`;
+    } else {
+      historyData.forEach(item => {
+        html += `<div class="mine-item">
+          <div class="left">
+            <div class="icon-box"><i class="ri-${item.type === 'bird' ? 'bird-line' : item.type === 'post' ? 'article-line' : 'map-pin-line'}"></i></div>
+            <div>
+              <div>${item.title}</div>
+              <div style="font-size:12px; color:#888; font-weight:normal;">${item.desc}</div>
+            </div>
+          </div>
+          <span style="font-size:12px; color:#aaa;">${item.time}</span>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+    el.innerHTML = html;
+  }
+
+  /* ================= 新增：我的收藏 ================= */
+  function renderFavorites() {
+    const el = document.getElementById('page-favorites');
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="section-title" style="margin-top:0;">⭐ 收藏的帖子</div>
+      <div class="spot-list">
+        <div class="spot-item">
+          <div class="spot-name">📝 武汉秋冬观鸟点位攻略（干货）</div>
+          <div class="spot-meta"><span>鸟导阿强</span><span>👍 412</span></div>
+        </div>
+        <div class="spot-item">
+          <div class="spot-name">📝 到底哪种摄像机比较适合新手？</div>
+          <div class="spot-meta"><span>镜头里的风</span><span>👍 289</span></div>
+        </div>
+      </div>
+      
+      <div class="section-title" style="margin-top:20px;">⭐ 收藏的鸟种</div>
+      <div class="ai-cards" style="padding: 0 15px;">
+        <div class="ai-card"><div class="t">普通翠鸟</div><div class="d">水鸟 · 较常见</div></div>
+        <div class="ai-card"><div class="t">戴胜</div><div class="d">林鸟 · 少见</div></div>
+      </div>
+    </div>`;
+    el.innerHTML = replaceIcons(html);
+  }
+
+  /* ================= 新增：关注列表 ================= */
+  function renderFollowList() {
+    const el = document.getElementById('page-follow-list');
+    const users = RANK_SEED.slice(0, 4);
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="section-title" style="margin-top:0;">我的关注</div>
+      <div class="spot-list">`;
+      
+    users.forEach(u => {
+      html += `<div class="spot-item" onclick="App.viewUserProfile('${u.name}')" style="display:flex; align-items:center; gap:15px;">
+        <div style="width:46px; height:46px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:24px;">${u.icon}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:15px;">${u.name}</div>
+          <div style="font-size:12px; color:#888; margin-top:2px;">🐦 ${u.birds} 种 · 👍 ${u.likes}</div>
+        </div>
+        <button class="btn ghost" style="padding:4px 12px; font-size:12px; border-radius:20px;">已关注</button>
+      </div>`;
+    });
+    
+    html += `</div></div>`;
+    el.innerHTML = replaceIcons(html);
+  }
+  
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap 
