@@ -74,7 +74,7 @@ const App = (() => {
     // 判断要显示哪个容器
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
@@ -95,7 +95,7 @@ const App = (() => {
     // 隐藏顶部导航栏逻辑
     const topTabs = document.querySelector('.top-tabs-wrapper');
     if (topTabs) {
-      if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p)) {
+      if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post'].includes(p)) {
         topTabs.classList.add('hidden');
       } else {
         topTabs.classList.remove('hidden');
@@ -121,6 +121,7 @@ const App = (() => {
     else if (current === 'offline') renderOfflinePage();
     else if (current === 'edit-profile') renderEditProfile();
     else if (current === 'user-profile') renderUserProfile(currentProfileName);
+    else if (current === 'create-post') renderCreatePost();
   }
 
   /* ================= 交流区 ================= */
@@ -137,7 +138,7 @@ const App = (() => {
     el.querySelectorAll('[data-ft="comm-tab"]').forEach(x =>
       x.addEventListener('click', () => { commTab = x.dataset.v; renderComm(el); })
     );
-    el.querySelector('#fabPost').addEventListener('click', openPostModal);
+    el.querySelector('#fabPost').addEventListener('click', () => App.switchPage('create-post'));
     bindPostEvents(el);
   }
 
@@ -222,12 +223,69 @@ const App = (() => {
 
   /* ---- 发帖 ---- */
   let postImgData = '';
-  function openPostModal() {
+    /* ---- 独立发帖页面渲染 ---- */
+  let postImgData = '';
+  let selectedPostType = 'share';
+
+  function renderCreatePost() {
+    const el = document.getElementById('page-create-post');
+    // 重置状态
     postImgData = '';
-    document.getElementById('postTitle').value = '';
-    document.getElementById('postContent').value = '';
-    document.getElementById('postImgPreview').innerHTML = '';
-    document.getElementById('modalPost').classList.add('show');
+    selectedPostType = 'share';
+    
+    let html = `
+      <div class="page-sub" style="padding: 0; height: 100%; display: flex; flex-direction: column; background: #fff;">
+        <!-- 顶部导航栏 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee;">
+          <span style="font-size: 20px; color: #333; cursor: pointer;" onclick="App.switchPage('comm')">✕</span>
+          <span style="font-size: 16px; font-weight: 600;">发布新帖子</span>
+          <button class="btn primary" id="postSubmit" style="padding: 6px 16px; border-radius: 20px; font-size: 14px;">发布</button>
+        </div>
+        
+        <!-- 内容区 -->
+        <div style="flex: 1; overflow-y: auto; padding: 15px 20px;">
+          <div class="post-type-row" id="postTypeRow">
+            <span class="pt active" data-pt="share">分享</span>
+            <span class="pt" data-pt="guide">攻略</span>
+            <span class="pt" data-pt="qa">问答</span>
+            <span class="pt" data-pt="region">地区</span>
+          </div>
+          <input class="inp" id="postTitle" placeholder="标题（一句话说清）" style="font-size: 16px; padding: 12px 0; border: none; border-bottom: 1px solid #eee; border-radius: 0; margin-bottom: 10px;">
+          <textarea class="inp ta" id="postContent" placeholder="正文：写下你的观鸟经历、经验或问题…" style="border: none; font-size: 15px; padding: 12px 0; min-height: 150px; resize: none; background: transparent;"></textarea>
+          
+          <div class="img-row" style="margin-top: 15px;">
+            <label class="img-add" for="postImgInput" style="width: 80px; height: 80px; border-radius: 12px;">＋<small>添加图片</small></label>
+            <div class="img-preview" id="postImgPreview" style="width: 80px; height: 80px; border-radius: 12px;"></div>
+            <input type="file" id="postImgInput" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>`;
+    el.innerHTML = html;
+
+    // 绑定类型切换
+    const typeRow = el.querySelector('#postTypeRow');
+    typeRow.querySelectorAll('.pt').forEach(x => {
+      x.addEventListener('click', () => {
+        typeRow.querySelectorAll('.pt').forEach(y => y.classList.remove('active'));
+        x.classList.add('active');
+        selectedPostType = x.dataset.pt;
+      });
+    });
+
+    // 绑定图片上传
+    el.querySelector('#postImgInput').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      compressImage(f, data => {
+        postImgData = data;
+        el.querySelector('#postImgPreview').innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"><span class="del" id="delPostImg">✕</span>`;
+        el.querySelector('#delPostImg').addEventListener('click', () => {
+          postImgData = ''; el.querySelector('#postImgPreview').innerHTML = '';
+        });
+      });
+    });
+
+    // 绑定发布按钮
+    el.querySelector('#postSubmit').addEventListener('click', () => submitPost(el));
   }
 
   function compressImage(file, cb) {
@@ -246,22 +304,31 @@ const App = (() => {
     reader.readAsDataURL(file);
   }
 
-  function submitPost() {
-    const title = document.getElementById('postTitle').value.trim();
-    const content = document.getElementById('postContent').value.trim();
-    const type = document.querySelector('#postTypeRow .pt.active').dataset.pt;
+  function submitPost(el) {
+    const title = el.querySelector('#postTitle').value.trim();
+    const content = el.querySelector('#postContent').value.trim();
     if (!title) { toast('请填写标题'); return; }
+    
     const u = Store.user();
     const post = {
-      id: 'u' + Date.now(), type, author: u.name, avatar: u.avatar, time: '刚刚',
+      id: 'u' + Date.now(), type: selectedPostType, author: u.name, avatar: u.avatar, time: '刚刚',
       title, content, likes: 0, comments: 0, fish: 0, image: postImgData || undefined, hot: false
     };
-    const posts = Store.posts(); posts.unshift(post); Store.savePosts(posts);
-    const mine = Store.myPosts(); mine.push(post.id); Store.saveMyPosts(mine);
+    
+    const posts = Store.posts(); 
+    posts.unshift(post); 
+    Store.savePosts(posts);
+    
+    const mine = Store.myPosts(); 
+    mine.push(post.id); 
+    Store.saveMyPosts(mine);
+    
     addExp(10);
-    closeModal('modalPost');
     toast('发布成功，获得经验+10');
-    commTab = type; refreshComm();
+    
+    // 跳回交流区并切换到对应的 Tab
+    commTab = selectedPostType; 
+    App.switchPage('comm'); 
   }
 
   /* ================= 用户资料 ================= */
