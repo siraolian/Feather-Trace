@@ -2,7 +2,7 @@
  * Feather Trace —— 主逻辑
  * ============================================================ */
 
-// 图标映射表（用于将 Emoji 自动替换为设计图标）
+// 图标映射表（全局替换）
 const ICON_MAP = {
   '🔍': '<i class="ri-search-line"></i>', '🏠': '<i class="ri-home-9-line"></i>', '🛒': '<i class="ri-shopping-bag-4-line"></i>',
   '💬': '<i class="ri-message-3-line"></i>', '👤': '<i class="ri-user-line"></i>', '🐦': '<i class="ri-bird-line"></i>',
@@ -15,7 +15,7 @@ const ICON_MAP = {
   '🦅': '<i class="ri-bird-line"></i>', '🦉': '<i class="ri-bird-line"></i>', '📢': '<i class="ri-megaphone-line"></i>',
   '🏆': '<i class="ri-trophy-line"></i>', '🧠': '<i class="ri-brain-line"></i>', '☁️': '<i class="ri-cloud-line"></i>',
   '🕶️': '<i class="ri-spy-line"></i>', '🤖': '<i class="ri-robot-line"></i>', '💾': '<i class="ri-save-line"></i>',
-  '📚': '<i class="ri-book-line"></i>', '🦵': '<i class="ri-footprint-line"></i>'
+  '📚': '<i class="ri-book-line"></i>', '🦵': '<i class="ri-footprint-line"></i>', '🪶': '<i class="ri-quill-pen-line"></i>'
 };
 
 function replaceIcons(htmlStr) {
@@ -67,7 +67,7 @@ const App = (() => {
       el.classList.toggle('active', active);
     });
     
-    // 控制顶栏和底栏显示隐藏
+    // 顶栏和底栏的显隐
     const topTabs = document.querySelector('.top-tabs-wrapper');
     const bottomNav = document.querySelector('.bottom-nav');
     if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search'].includes(p)) {
@@ -103,7 +103,6 @@ const App = (() => {
 
   /* ================= 交流区 ================= */
   let commTab = 'follow';
-
   function renderComm(el) {
     const tabs = [['follow', '关注'], ['region', '地区'], ['guide', '攻略'], ['share', '分享'], ['qa', '问答']];
     let html = `<div class="page-head">${tabs.map(t => `<div class="ptab ${commTab === t[0] ? 'active' : ''}" data-ft="comm-tab" data-v="${t[0]}">${t[1]}</div>`).join('')}</div>`;
@@ -175,7 +174,7 @@ const App = (() => {
     renderComm(el);
   }
 
-  /* ---- 独立发帖页面 ---- */
+  /* ================= 独立发帖页面 ================= */
   let postImgData = '';
   let selectedPostType = 'share';
 
@@ -203,7 +202,7 @@ const App = (() => {
           </div>
         </div>
       </div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
 
     const typeRow = el.querySelector('#postTypeRow');
     typeRow.querySelectorAll('.pt').forEach(x => {
@@ -276,7 +275,7 @@ const App = (() => {
         <div id="searchResultArea" style="display:none;"></div>
       </div>
     `;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     const input = el.querySelector('#searchPageInput');
     const defaultArea = el.querySelector('#searchDefaultArea');
     const resultArea = el.querySelector('#searchResultArea');
