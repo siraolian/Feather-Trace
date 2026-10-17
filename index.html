@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#2E7D32">
+<meta name="theme-color" content="#95BD39">
 <title>羽迹 · 观鸟交流平台</title>
+<!-- 👇 引入 Remix Icon 图标库（极其重要！不引入图标全看不见） -->
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,29 +27,7 @@
       <div class="tab" data-tab="progress">进度</div>
     </div>
     <!-- 搜索图标按钮 -->
-    <span class="icon-search" id="topSearchBtn" style="color: white; font-size: 20px; cursor: pointer; margin-left: 8px;">🔍</span>
-  </div>
-
-  <!-- 全屏搜索弹窗 -->
-  <div class="modal" id="modalSearch" style="align-items: flex-start; padding-top: 80px;">
-    <div class="modal-inner" style="width: 90%; max-width: 360px; border-radius: 18px;">
-      <div class="modal-head">
-        <span>搜索</span>
-        <span class="close" data-close="modalSearch">✕</span>
-      </div>
-      <div class="modal-body" style="padding: 15px;">
-        <!-- 地点输入框 -->
-        <input type="text" id="globalLocationInput" class="inp" style="margin: 0 0 10px 0; font-size: 14px;" placeholder="输入地点（如：沙湖）定位10公里">
-        
-        <!-- 关键词输入框 -->
-        <input type="text" id="globalSearchInput" class="inp" style="margin: 0; font-size: 16px;" placeholder="搜索鸟种、帖子...">
-        
-        <!-- 搜索结果区 -->
-        <div id="searchResults" style="margin-top: 15px; min-height: 100px;">
-          <div class="empty" style="padding: 20px;"><div class="e">🔍</div>输入关键词开始搜索</div>
-        </div>
-      </div>
-    </div>
+    <span class="icon-search" id="topSearchBtn" style="color: white; font-size: 20px; cursor: pointer; margin-left: 8px;"><i class="ri-search-line"></i></span>
   </div>
   
   <!-- 主内容区 -->
@@ -56,6 +36,7 @@
     <section class="page" id="page-map"></section>
     <section class="page" id="page-ai"></section>
     <section class="page" id="page-progress"></section>
+    
     <!-- 独立子页面 -->
     <section class="page" id="page-my-birds"></section>
     <section class="page" id="page-my-badges"></section>
@@ -63,33 +44,34 @@
     <section class="page" id="page-edit-profile"></section>
     <section class="page" id="page-user-profile"></section>
     <section class="page" id="page-create-post"></section>
+    <section class="page" id="page-search"></section>
   </main>
 
-  <!-- 底部导航：首页 / 售卖 / 信息 / 我的 -->
+  <!-- 底部导航 -->
   <nav class="bottom-nav">
-    <div class="nav-item active" data-tab="home"><span class="ni">🏠</span><span>首页</span></div>
-    <div class="nav-item" data-tab="shop"><span class="ni">🛒</span><span>售卖</span></div>
-    <div class="nav-item" data-tab="msg"><span class="ni">💬</span><span>信息</span></div>
-    <div class="nav-item" data-tab="mine"><span class="ni">👤</span><span>我的</span></div>
+    <div class="nav-item active" data-tab="home"><span class="ni"><i class="ri-home-9-line"></i></span><span>首页</span></div>
+    <div class="nav-item" data-tab="shop"><span class="ni"><i class="ri-shopping-bag-4-line"></i></span><span>售卖</span></div>
+    <div class="nav-item" data-tab="msg"><span class="ni"><i class="ri-message-3-line"></i></span><span>信息</span></div>
+    <div class="nav-item" data-tab="mine"><span class="ni"><i class="ri-user-line"></i></span><span>我的</span></div>
   </nav>
 
 </div>
 
 <!-- ====== 弹层：鸟种详情 ====== -->
 <div class="modal" id="modalBird">
-  <div class="modal-head"><span id="birdModalTitle">鸟种详情</span><span class="close" data-close="modalBird">✕</span></div>
+  <div class="modal-head"><span id="birdModalTitle">鸟种详情</span><span class="close" onclick="closeModal('modalBird')">✕</span></div>
   <div class="modal-body" id="birdModalBody"></div>
 </div>
 
 <!-- ====== 弹层：观测点详情 ====== -->
 <div class="modal" id="modalSpot">
-  <div class="modal-head"><span id="spotModalTitle">观测点</span><span class="close" data-close="modalSpot">✕</span></div>
+  <div class="modal-head"><span id="spotModalTitle">观测点</span><span class="close" onclick="closeModal('modalSpot')">✕</span></div>
   <div class="modal-body" id="spotModalBody"></div>
 </div>
 
 <!-- ====== 弹层：VIP ====== -->
 <div class="modal" id="modalVip">
-  <div class="modal-head"><span>Feather Trace VIP</span><span class="close" data-close="modalVip">✕</span></div>
+  <div class="modal-head"><span>Feather Trace VIP</span><span class="close" onclick="closeModal('modalVip')">✕</span></div>
   <div class="modal-body" id="vipBody"></div>
 </div>
 
