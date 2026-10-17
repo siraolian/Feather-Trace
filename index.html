@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#95BD39">
 <title>羽迹 · 观鸟交流平台</title>
-<!-- 👇 引入 Remix Icon 图标库（极其重要！不引入图标全看不见） -->
+<!-- 👇 【新增】引入 Remix Icon 图标库，解决图标消失问题 -->
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -29,15 +29,14 @@
     <!-- 搜索图标按钮 -->
     <span class="icon-search" id="topSearchBtn" style="color: white; font-size: 20px; cursor: pointer; margin-left: 8px;"><i class="ri-search-line"></i></span>
   </div>
-  
+
   <!-- 主内容区 -->
   <main class="main" id="main">
     <section class="page" id="page-comm"></section>
     <section class="page" id="page-map"></section>
     <section class="page" id="page-ai"></section>
     <section class="page" id="page-progress"></section>
-    
-    <!-- 独立子页面 -->
+    <!-- 👇 独立子页面（新增全屏搜索页、独立发帖页、用户主页） -->
     <section class="page" id="page-my-birds"></section>
     <section class="page" id="page-my-badges"></section>
     <section class="page" id="page-offline"></section>
@@ -47,7 +46,7 @@
     <section class="page" id="page-search"></section>
   </main>
 
-  <!-- 底部导航 -->
+  <!-- 底部导航：首页 / 售卖 / 信息 / 我的 -->
   <nav class="bottom-nav">
     <div class="nav-item active" data-tab="home"><span class="ni"><i class="ri-home-9-line"></i></span><span>首页</span></div>
     <div class="nav-item" data-tab="shop"><span class="ni"><i class="ri-shopping-bag-4-line"></i></span><span>售卖</span></div>
@@ -59,20 +58,26 @@
 
 <!-- ====== 弹层：鸟种详情 ====== -->
 <div class="modal" id="modalBird">
-  <div class="modal-head"><span id="birdModalTitle">鸟种详情</span><span class="close" onclick="closeModal('modalBird')">✕</span></div>
-  <div class="modal-body" id="birdModalBody"></div>
+  <div class="modal-inner">
+    <div class="modal-head"><span id="birdModalTitle">鸟种详情</span><span class="close" onclick="closeModal('modalBird')"><i class="ri-close-line"></i></span></div>
+    <div class="modal-body" id="birdModalBody"></div>
+  </div>
 </div>
 
 <!-- ====== 弹层：观测点详情 ====== -->
 <div class="modal" id="modalSpot">
-  <div class="modal-head"><span id="spotModalTitle">观测点</span><span class="close" onclick="closeModal('modalSpot')">✕</span></div>
-  <div class="modal-body" id="spotModalBody"></div>
+  <div class="modal-inner">
+    <div class="modal-head"><span id="spotModalTitle">观测点</span><span class="close" onclick="closeModal('modalSpot')"><i class="ri-close-line"></i></span></div>
+    <div class="modal-body" id="spotModalBody"></div>
+  </div>
 </div>
 
 <!-- ====== 弹层：VIP ====== -->
 <div class="modal" id="modalVip">
-  <div class="modal-head"><span>Feather Trace VIP</span><span class="close" onclick="closeModal('modalVip')">✕</span></div>
-  <div class="modal-body" id="vipBody"></div>
+  <div class="modal-inner">
+    <div class="modal-head"><span>Feather Trace VIP</span><span class="close" onclick="closeModal('modalVip')"><i class="ri-close-line"></i></span></div>
+    <div class="modal-body" id="vipBody"></div>
+  </div>
 </div>
 
 <!-- 轻提示 -->
