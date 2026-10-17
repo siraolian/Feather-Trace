@@ -319,6 +319,7 @@ const App = (() => {
   /* ================= 全屏搜索页 ================= */
   function renderSearch() {
     const el = document.getElementById('page-search');
+    if (!el) return;
     let html = `
       <div class="search-header">
         <div class="search-input-wrap">
