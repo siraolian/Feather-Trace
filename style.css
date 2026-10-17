@@ -45,6 +45,10 @@ body {
 .page { display: none; padding-bottom: 80px; }
 .page.active { display: block; }
 
+/* 全屏搜索页专属 */
+#page-search { background: #F7F9F4; }
+#page-search.active { display: flex; flex-direction: column; height: 100%; padding-bottom: 0; }
+
 /* 页面通用头部 */
 .page-head { display: flex; background: #fff; border-bottom: 1px solid #EDF2ED; padding: 0 8px; position: sticky; top: 0; z-index: 10; }
 .page-head .ptab { flex: 1; text-align: center; font-size: 14px; color: var(--text2); padding: 12px 0; cursor: pointer; position: relative; }
@@ -88,14 +92,6 @@ body {
 .map-toolbar { display: flex; gap: 8px; padding: 10px 12px 0; flex-wrap: wrap; }
 .map-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text2); padding: 8px 12px 2px; flex-wrap: wrap; }
 .map-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-
-/* 筛选面板 */
-.filter-panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); margin: 10px 12px 0; padding: 12px; display: none; }
-.filter-panel.show { display: block; }
-.filter-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 13px; }
-.filter-row label { width: 70px; color: var(--text2); flex-shrink: 0; }
-.filter-row input[type=range] { flex: 1; accent-color: var(--green); }
-.filter-row .val { width: 60px; text-align: right; color: var(--green); font-weight: 600; }
 
 /* 观测点列表 */
 .spot-list { margin: 10px 12px 0; }
@@ -158,7 +154,7 @@ body {
 .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; }
 .section-title { font-size: 13px; color: var(--text2); margin: 16px 12px 8px; font-weight: 600; }
 
-/* 弹层（底部抽屉） */
+/* 👇 核心修复：弹层变底部抽屉 */
 .modal { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 100; background: rgba(0,0,0,.4); display: none; justify-content: center; align-items: flex-end; }
 .modal.show { display: flex; }
 .modal-inner { width: 100%; max-width: 100%; height: 85vh; background: #FFFFFF; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: slideUp .3s cubic-bezier(0.25, 0.8, 0.25, 1); }
@@ -167,7 +163,7 @@ body {
 .modal-head .close { cursor: pointer; color: #888; font-size: 22px; padding: 0 5px; }
 .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; background: #FFFFFF; }
 
-/* 发帖页 */
+/* 发帖页专属 */
 .post-type-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .pt { font-size: 13px; padding: 6px 14px; border-radius: 20px; background: #F1F5F1; color: var(--text2); cursor: pointer; }
 .pt.active { background: var(--green); color: #fff; }
@@ -247,8 +243,6 @@ body {
 .page-back-btn { display: inline-block; margin-bottom: 15px; font-size: 14px; color: var(--green); cursor: pointer; font-weight: 600; background: var(--green-light); padding: 6px 12px; border-radius: 20px; }
 
 /* 全屏搜索页 */
-#page-search { background: #F7F9F4; }
-#page-search.active { display: flex; flex-direction: column; height: 100%; padding-bottom: 0; }
 .search-header { display: flex; align-items: center; padding: 12px 15px; background: #fff; border-bottom: 1px solid #eee; flex-shrink: 0; }
 .search-input-wrap { flex: 1; display: flex; align-items: center; background: #F2F4F2; border-radius: 20px; padding: 8px 15px; margin-right: 10px; }
 .search-input-wrap i { color: #888; font-size: 16px; margin-right: 8px; }
@@ -265,3 +259,6 @@ body {
 .res-info { flex: 1; min-width: 0; }
 .res-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .res-desc { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 图标通用样式 */
+i[class^="ri-"] { vertical-align: middle; }
