@@ -4,6 +4,47 @@
  *       / 鸟种档案 / 发帖 / 成就 / VIP / 数据持久化
  * ============================================================ */
 
+// 图标映射表
+const ICON_MAP = {
+  '🔍': '<i class="ri-search-line"></i>',
+  '🏠': '<i class="ri-home-9-line"></i>',
+  '🛒': '<i class="ri-shopping-bag-4-line"></i>',
+  '💬': '<i class="ri-message-3-line"></i>',
+  '👤': '<i class="ri-user-line"></i>',
+  '🐦': '<i class="ri-bird-line"></i>',
+  '🏅': '<i class="ri-medal-line"></i>',
+  '👍': '<i class="ri-thumb-up-line"></i>',
+  '📍': '<i class="ri-map-pin-line"></i>',
+  '📝': '<i class="ri-article-line"></i>',
+  '🐟': '<i class="ri-coin-line"></i>',
+  '📴': '<i class="ri-wifi-off-line"></i>',
+  '👑': '<i class="ri-vip-crown-line"></i>',
+  '🗑️': '<i class="ri-delete-bin-line"></i>',
+  '✏️': '<i class="ri-pencil-line"></i>',
+  '🔭': '<i class="ri-eye-line"></i>',
+  '🧥': '<i class="ri-shirt-line"></i>',
+  '📖': '<i class="ri-book-open-line"></i>',
+  '🦆': '<i class="ri-bird-line"></i>',
+  '🌿': '<i class="ri-leaf-line"></i>',
+  '🌳': '<i class="ri-plant-line"></i>',
+  '📷': '<i class="ri-camera-line"></i>',
+  '🧢': '<i class="ri-user-smile-line"></i>',
+  '🦜': '<i class="ri-bird-line"></i>',
+  '🦅': '<i class="ri-bird-line"></i>',
+  '🦉': '<i class="ri-bird-line"></i>',
+};
+
+// 全局替换工具函数
+function replaceIcons(htmlStr) {
+  if (!htmlStr) return htmlStr;
+  let newStr = htmlStr;
+  for (let emoji in ICON_MAP) {
+    // 使用正则全局替换
+    newStr = newStr.replace(new RegExp(emoji, 'g'), ICON_MAP[emoji]);
+  }
+  return newStr;
+}
+
 /* 全局弹窗关闭（供 map.js / ai.js 等模块调用） */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
@@ -92,7 +133,7 @@ const App = (() => {
     let html = `<div class="page-head">${tabs.map(t => `<div class="ptab ${commTab === t[0] ? 'active' : ''}" data-ft="comm-tab" data-v="${t[0]}">${t[1]}</div>`).join('')}</div>`;
     html += `<div class="post-area" id="postArea">${postListHtml()}</div>`;
     html += `<div class="fab" id="fabPost">＋</div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     el.querySelectorAll('[data-ft="comm-tab"]').forEach(x =>
       x.addEventListener('click', () => { commTab = x.dataset.v; renderComm(el); })
     );
@@ -261,7 +302,7 @@ const App = (() => {
       html += `<div class="empty"><div class="e">📝</div>该用户暂无帖子</div>`;
     }
     html += `</div></div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
   }
 
   /* ================= 成就 / 进度 ================= */
@@ -355,7 +396,7 @@ const App = (() => {
         <div class="card-title">🌿 候鸟迁徙季数据收集计划</div>
         <div class="card-sub">参与平台"数据+AI+生态保护"计划：你的每条观测记录经脱敏后将支持科研机构物种分布研究。</div>
       </div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     el.querySelectorAll('[data-ft="join-event"]').forEach(x =>
       x.addEventListener('click', () => toast('报名成功！本周末记得开启观鸟记录模式 🦆'))
     );
@@ -406,7 +447,7 @@ const App = (() => {
         <div class="card-sub">①装备导流返佣（本页）②基础免费+VIP订阅 ③社区打赏（抽成10%）④赛事报名费 ⑤科研数据变现 ⑥O2O生态合作。核心："数据+AI+垂直社区"。</div>
         <button class="btn ghost block mt12" data-ft="open-vip">查看 VIP 订阅方案 →</button>
       </div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     el.querySelectorAll('[data-ft="open-vip"]').forEach(x => x.addEventListener('click', openVip));
   }
 
@@ -430,7 +471,7 @@ const App = (() => {
         <span class="msg-time">${m.time}</span>
       </div>`).join('');
     html += `</div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
   }
 
   /* ================= 我的 ================= */
@@ -478,7 +519,7 @@ const App = (() => {
           </div>`).join('')
         : '<div class="empty"><div class="e">📝</div>还没有发过帖子<br>去「交流」页点右下角＋发布吧</div>'}
       </div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     el.querySelectorAll('[data-ft="open-vip"]').forEach(x => x.addEventListener('click', openVip));
     el.querySelectorAll('[data-ft="my-posts"]').forEach(x => x.addEventListener('click', () => toast('已在下方展示你的帖子')));
     el.querySelectorAll('[data-ft="my-birds"]').forEach(x => x.addEventListener('click', () => App.switchPage('my-birds')));
@@ -505,7 +546,7 @@ const App = (() => {
       html += `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
     }
     html += `</div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     el.querySelectorAll('[data-ft="bird-open"]').forEach(x => x.addEventListener('click', () => App.openBird(x.dataset.id)));
   }
 
@@ -523,7 +564,7 @@ const App = (() => {
       </div>`;
     });
     html += `</div></div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
   }
 
   function renderOfflinePage() {
@@ -537,7 +578,7 @@ const App = (() => {
       <div class="vip-item"><span class="vi">💾</span><span>数据本地存储：帖子/收藏/成就不丢失</span></div>
       <button class="btn primary block mt12" onclick="App.openVip()">升级 VIP 解锁更多离线包</button>
       </div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
   }
 
   function renderEditProfile() {
@@ -561,7 +602,7 @@ const App = (() => {
         ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
       </div>
       <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
     
     el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
       el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
