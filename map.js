@@ -323,5 +323,5 @@ function zoomOut() {
   state.zoom = Math.max(0.5, state.zoom - 0.3); // 最小缩小到0.5倍
   App.renderCurrent();
 }
-  return { render, useGeolocation, state, zoomIn, zoomOut };
+    return { render, useGeolocation, state, zoomIn, zoomOut, openSpot };
 })();
