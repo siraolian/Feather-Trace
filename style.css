@@ -423,3 +423,11 @@ body {
 body.font-large { font-size: 18px; }
 body.font-large .mine-item { font-size: 18px; }
 body.font-large .card-sub { font-size: 14px; }
+
+/* 调整图标大小和垂直对齐 */
+i[class^="ri-"] {
+  font-size: 1.2em; /* 图标稍微比文字大一点 */
+  vertical-align: middle; /* 垂直居中对齐 */
+  position: relative;
+  top: -2px; /* 稍微往上抬一点点，跟文字视觉更平齐 */
+}
