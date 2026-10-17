@@ -67,7 +67,7 @@ const App = (() => {
     
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
@@ -87,7 +87,7 @@ const App = (() => {
     // 控制顶栏和底栏显示隐藏
     const topTabs = document.querySelector('.top-tabs-wrapper');
     const bottomNav = document.querySelector('.bottom-nav');
-    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search'].includes(p)) {
+    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list'].includes(p)) {
       if (topTabs) topTabs.classList.add('hidden');
       if (bottomNav) bottomNav.style.display = 'none';
     } else {
