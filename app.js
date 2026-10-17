@@ -1,7 +1,5 @@
 /* ============================================================
  * Feather Trace —— 主逻辑
- * 负责：页面切换 / 交流区 / 进度游戏化 / 售卖·信息·我的
- *       / 鸟种档案 / 发帖 / 成就 / VIP / 数据持久化
  * ============================================================ */
 
 // 图标映射表
@@ -34,26 +32,22 @@ const ICON_MAP = {
   '🦉': '<i class="ri-bird-line"></i>',
 };
 
-// 全局替换工具函数
 function replaceIcons(htmlStr) {
   if (!htmlStr) return htmlStr;
   let newStr = htmlStr;
   for (let emoji in ICON_MAP) {
-    // 使用正则全局替换
     newStr = newStr.replace(new RegExp(emoji, 'g'), ICON_MAP[emoji]);
   }
   return newStr;
 }
 
-/* 全局弹窗关闭（供 map.js / ai.js 等模块调用） */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 const App = (() => {
 
-  let current = 'comm'; // comm / map / ai / progress / shop / msg / mine
-  let currentProfileName = ''; // 记录当前正在看谁的个人资料
+  let current = 'comm';
+  let currentProfileName = ''; 
 
-  /* ================= 工具 ================= */
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -71,15 +65,13 @@ const App = (() => {
     current = p;
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     
-    // 判断要显示哪个容器
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
     
-    // 顶栏和底部导航的 active 状态逻辑
     document.querySelectorAll('.top-tabs .tab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
     });
@@ -92,14 +84,15 @@ const App = (() => {
       el.classList.toggle('active', active);
     });
     
-    // 隐藏顶部导航栏逻辑
+    // 控制顶栏和底栏显示隐藏
     const topTabs = document.querySelector('.top-tabs-wrapper');
-    if (topTabs) {
-      if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post'].includes(p)) {
-        topTabs.classList.add('hidden');
-      } else {
-        topTabs.classList.remove('hidden');
-      }
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search'].includes(p)) {
+      if (topTabs) topTabs.classList.add('hidden');
+      if (bottomNav) bottomNav.style.display = 'none';
+    } else {
+      if (topTabs) topTabs.classList.remove('hidden');
+      if (bottomNav) bottomNav.style.display = 'flex';
     }
     
     renderCurrent();
@@ -122,6 +115,7 @@ const App = (() => {
     else if (current === 'edit-profile') renderEditProfile();
     else if (current === 'user-profile') renderUserProfile(currentProfileName);
     else if (current === 'create-post') renderCreatePost();
+    else if (current === 'search') renderSearch();
   }
 
   /* ================= 交流区 ================= */
@@ -221,28 +215,23 @@ const App = (() => {
     renderComm(el);
   }
 
-  /* ---- 发帖 ---- */
-  let postImgData = '';
-    /* ---- 独立发帖页面渲染 ---- */
+  /* ---- 独立发帖页面 ---- */
   let postImgData = '';
   let selectedPostType = 'share';
 
   function renderCreatePost() {
     const el = document.getElementById('page-create-post');
-    // 重置状态
     postImgData = '';
     selectedPostType = 'share';
     
     let html = `
       <div class="page-sub" style="padding: 0; height: 100%; display: flex; flex-direction: column; background: #fff;">
-        <!-- 顶部导航栏 -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee;">
           <span style="font-size: 20px; color: #333; cursor: pointer;" onclick="App.switchPage('comm')">✕</span>
           <span style="font-size: 16px; font-weight: 600;">发布新帖子</span>
           <button class="btn primary" id="postSubmit" style="padding: 6px 16px; border-radius: 20px; font-size: 14px;">发布</button>
         </div>
         
-        <!-- 内容区 -->
         <div style="flex: 1; overflow-y: auto; padding: 15px 20px;">
           <div class="post-type-row" id="postTypeRow">
             <span class="pt active" data-pt="share">分享</span>
@@ -262,7 +251,6 @@ const App = (() => {
       </div>`;
     el.innerHTML = html;
 
-    // 绑定类型切换
     const typeRow = el.querySelector('#postTypeRow');
     typeRow.querySelectorAll('.pt').forEach(x => {
       x.addEventListener('click', () => {
@@ -272,7 +260,6 @@ const App = (() => {
       });
     });
 
-    // 绑定图片上传
     el.querySelector('#postImgInput').addEventListener('change', e => {
       const f = e.target.files[0]; if (!f) return;
       compressImage(f, data => {
@@ -284,7 +271,6 @@ const App = (() => {
       });
     });
 
-    // 绑定发布按钮
     el.querySelector('#postSubmit').addEventListener('click', () => submitPost(el));
   }
 
@@ -326,9 +312,147 @@ const App = (() => {
     addExp(10);
     toast('发布成功，获得经验+10');
     
-    // 跳回交流区并切换到对应的 Tab
     commTab = selectedPostType; 
     App.switchPage('comm'); 
+  }
+
+  /* ================= 全屏搜索页 ================= */
+  function renderSearch() {
+    const el = document.getElementById('page-search');
+    let html = `
+      <div class="search-header">
+        <div class="search-input-wrap">
+          <i class="ri-search-line"></i>
+          <input type="text" id="searchPageInput" placeholder="搜索用户、鸟种、帖子、地点..." autocomplete="off">
+        </div>
+        <span class="search-cancel" onclick="App.switchPage('comm')">取消</span>
+      </div>
+      <div class="search-content" id="searchContent">
+        <div id="searchDefaultArea">
+          <div class="search-block">
+            <div class="search-block-title">🔥 热门搜索</div>
+            <div class="hot-tags">
+              <span class="hot-tag" onclick="App.doSearch('翠鸟')">翠鸟 <i class="ri-fire-fill"></i></span>
+              <span class="hot-tag" onclick="App.doSearch('沙湖')">沙湖</span>
+              <span class="hot-tag" onclick="App.doSearch('长焦镜头')">长焦镜头</span>
+              <span class="hot-tag" onclick="App.doSearch('老周')">老周</span>
+              <span class="hot-tag" onclick="App.doSearch('白鹭')">白鹭</span>
+            </div>
+          </div>
+        </div>
+        <div id="searchResultArea" style="display:none;"></div>
+      </div>
+    `;
+    el.innerHTML = html;
+
+    const input = el.querySelector('#searchPageInput');
+    const defaultArea = el.querySelector('#searchDefaultArea');
+    const resultArea = el.querySelector('#searchResultArea');
+
+    input.addEventListener('input', (e) => {
+      const kw = e.target.value.trim();
+      if (!kw) {
+        defaultArea.style.display = 'block';
+        resultArea.style.display = 'none';
+        return;
+      }
+      defaultArea.style.display = 'none';
+      resultArea.style.display = 'block';
+      executeSearch(kw, resultArea);
+    });
+
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function doSearch(kw) {
+    const input = document.getElementById('searchPageInput');
+    if (input) {
+      input.value = kw;
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+
+  function executeSearch(kw, container) {
+    let html = '';
+    const lowerKw = kw.toLowerCase();
+
+    // 1. 搜用户
+    const users = RANK_SEED.filter(u => u.name.toLowerCase().includes(lowerKw));
+    if (users.length) {
+      html += `<div class="search-block"><div class="search-block-title">👤 相关用户</div>`;
+      html += users.map(u => `
+        <div class="res-card" onclick="App.viewUserProfile('${u.name}')">
+          <div class="res-icon">${u.icon}</div>
+          <div class="res-info">
+            <div class="res-title">${u.name}</div>
+            <div class="res-desc">累计观鸟 ${u.birds} 种 · 获赞 ${u.likes}</div>
+          </div>
+        </div>
+      `).join('');
+      html += `</div>`;
+    }
+
+    // 2. 搜鸟种
+    const birds = BIRDS.filter(b => b.name.toLowerCase().includes(lowerKw) || b.features.toLowerCase().includes(lowerKw));
+    if (birds.length) {
+      html += `<div class="search-block"><div class="search-block-title">🐦 鸟类百科</div>`;
+      html += birds.map(b => `
+        <div class="res-card" onclick="App.openBird('${b.id}')">
+          <div class="res-icon" style="background:${b.color}22;color:${b.color}">${b.name[0]}</div>
+          <div class="res-info">
+            <div class="res-title">${b.name}</div>
+            <div class="res-desc">${b.group} · ${b.rarity}</div>
+          </div>
+        </div>
+      `).join('');
+      html += `</div>`;
+    }
+
+    // 3. 搜地点 (观测点)
+    const spots = SPOTS.filter(s => s.name.toLowerCase().includes(lowerKw) || s.env.includes(lowerKw));
+    if (spots.length) {
+      html += `<div class="search-block"><div class="search-block-title">📍 观测地点</div>`;
+      html += spots.map(s => `
+        <div class="res-card" onclick="App.gotoSpotOnMap('${s.id}')">
+          <div class="res-icon" style="background:#E3F2FD;color:#1E88E5"><i class="ri-map-pin-line"></i></div>
+          <div class="res-info">
+            <div class="res-title">${s.name}</div>
+            <div class="res-desc">${s.env} · ${s.level} · ${s.uploads}条记录</div>
+          </div>
+        </div>
+      `).join('');
+      html += `</div>`;
+    }
+
+    // 4. 搜帖子
+    const posts = Store.posts().filter(p => p.title.toLowerCase().includes(lowerKw) || p.content.toLowerCase().includes(lowerKw));
+    if (posts.length) {
+      html += `<div class="search-block"><div class="search-block-title">📝 交流帖子</div>`;
+      html += posts.slice(0, 5).map(p => `
+        <div class="res-card" onclick="App.toast('跳转到帖子详情（演示）')">
+          <div class="res-icon" style="background:#FFF3E0;color:#FB8C00"><i class="ri-article-line"></i></div>
+          <div class="res-info">
+            <div class="res-title">${escapeHtml(p.title)}</div>
+            <div class="res-desc">${escapeHtml(p.content).slice(0, 20)}...</div>
+          </div>
+        </div>
+      `).join('');
+      html += `</div>`;
+    }
+
+    if (!html) {
+      html = `<div class="empty" style="padding:40px"><div class="e">🔍</div>没有找到与“${escapeHtml(kw)}”相关的内容</div>`;
+    }
+    container.innerHTML = replaceIcons(html);
+  }
+
+  function gotoSpotOnMap(spotId) {
+    const spot = SPOTS.find(s => s.id === spotId);
+    if (!spot) return;
+    MapView.state.center = { lat: spot.lat, lng: spot.lng };
+    MapView.state.tab = 'near'; 
+    switchPage('map');
+    setTimeout(() => { MapView.openSpot(spotId); }, 300);
   }
 
   /* ================= 用户资料 ================= */
@@ -471,11 +595,8 @@ const App = (() => {
 
   function rankRows() {
     const u = Store.user();
-    const rows = [...RANK_SEED].map((r, i) => ({
-      ...r, rank: i + 1, me: false
-    }));
-    const myBirds = Store.birds().length, myLikes = u.likesReceived;
-    rows.push({ name: u.name, birds: myBirds, likes: myLikes, icon: u.avatar, rank: 6, me: true });
+    const rows = [...RANK_SEED].map((r, i) => ({ ...r, rank: i + 1, me: false }));
+    rows.push({ name: u.name, birds: Store.birds().length, likes: u.likesReceived, icon: u.avatar, rank: 6, me: true });
     rows.sort((a, b) => b.birds - a.birds || b.likes - a.likes);
     return rows.map((r, i) => `
       <div class="rank-row" style="${r.me ? 'border:1.5px solid var(--green);background:var(--green-light)' : ''}">
@@ -659,7 +780,6 @@ const App = (() => {
         <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
           ${isImgAvatar ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
         </div>
-        <!-- 👇 删掉了 capture="camera"，现在会弹出拍照/相册选项 -->
         <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
       </div>
       <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
@@ -687,6 +807,7 @@ const App = (() => {
       switchPage('mine');
     });
   }
+  
   function handleAvatarUpload(input) {
     const file = input.files[0];
     if (!file) return;
@@ -753,7 +874,7 @@ const App = (() => {
         <div class="bird-latin">${b.latin} · ${b.family}</div></div>
       </div>
       <div class="bird-tags">
-        <span class="btag">${b.group}</span><span class="btag">${b.rarity}</span><span class="btag">${b.habitat.split('、')[0]}</span>
+        <span class="btag">${b.group}</span><span class="btag">${b.rarity}</span><span class="btag">${b.hatat.split('、')[0]}</span>
       </div>
       <div class="info-block mt12"><b>识别要点</b>：${b.features}</div>
       <div class="info-block"><b>栖息环境</b>：${b.habitat}</div>
@@ -768,7 +889,7 @@ const App = (() => {
         <a class="ga-btn" href="https://www.jd.com" target="_blank" rel="noopener">去京东看看 →</a>
       </div>
       <button class="btn ghost block mt12" data-ft="ai-chat" data-id="${id}">🤖 问 AI：关于${b.name}还想知道什么？</button>`;
-    openModal('modalBird', `${b.name} · 鸟类档案`, html);
+    openModal('modalBird', `${b.name} · 鸟类档案`, replaceIcons(html));
     document.getElementById('modalBird').querySelectorAll('[data-ft="ai-chat"]').forEach(el =>
       el.addEventListener('click', () => {
         closeModal('modalBird');
@@ -783,85 +904,9 @@ const App = (() => {
 
   /* ================= 初始化 ================= */
   function init() {
-    // 顶部搜索全局绑定
     const topSearchBtn = document.getElementById('topSearchBtn');
     if (topSearchBtn) {
-      topSearchBtn.addEventListener('click', () => {
-        const modal = document.getElementById('modalSearch');
-        const input = document.getElementById('globalSearchInput');
-        const results = document.getElementById('searchResults');
-        input.value = '';
-        results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>';
-        
-        if (current === 'comm') input.placeholder = '搜索交流区帖子或用户...';
-        else if (current === 'map') input.placeholder = '搜索观测点或鸟种...';
-        else if (current === 'ai') input.placeholder = '搜索鸟类知识...';
-        else input.placeholder = '搜索当前页面...';
-
-        input.oninput = (e) => {
-          const kw = e.target.value.trim();
-          if (!kw) { 
-            results.innerHTML = '<div class="empty" style="padding:20px"><div class="e">🔍</div>输入关键词开始搜索</div>'; 
-            return; 
-          }
-          
-          let html = '';
-
-          // 1. 搜索用户
-          const users = RANK_SEED.filter(u => u.name.includes(kw));
-          if (users.length) {
-            html += users.map(u => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.viewUserProfile('${u.name}');"><div class="spot-name">👤 ${u.name} (用户)</div></div>`).join('');
-          }
-
-          // 2. 搜索帖子
-          if (current === 'comm' || current === '') {
-            const posts = Store.posts().filter(p => p.title.includes(kw) || p.content.includes(kw));
-            if (posts.length) {
-              html += posts.map(p => `<div class="spot-item" onclick="document.getElementById('modalSearch').classList.remove('show'); App.toast('跳转到帖子详情（演示）');"><div class="spot-name">📝 ${escapeHtml(p.title)}</div><div class="post-content" style="font-size:12px;">${escapeHtml(p.content).slice(0, 50)}...</div></div>`).join('');
-            }
-          }
-
-          // 3. 搜索鸟种
-          if (current === 'map' || current === 'ai') {
-            const birds = BIRDS.filter(b => b.name.includes(kw) || b.features.includes(kw));
-            if (birds.length) {
-              html += birds.map(b => `<div class="ai-card" onclick="document.getElementById('modalSearch').classList.remove('show'); App.openBird('${b.id}');"><div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div></div>`).join('');
-            }
-          }
-
-          if (!html) html = '<div class="empty" style="padding:20px">没有找到相关内容</div>';
-          results.innerHTML = html;
-
-          // 监听地点输入框，进行位置定位和10km筛选
-        
-        };
-        modal.classList.add('show');
-      });
-    }
-
-        // 👇 【新增】独立监听地点输入框（与搜索逻辑解耦）
-    const locationInp = document.getElementById('globalLocationInput');
-    if (locationInp) {
-      locationInp.addEventListener('input', (e) => {
-        const kw = e.target.value.trim();
-        // 在SPOTS里寻找匹配的地点
-        const foundSpot = SPOTS.find(s => s.name.includes(kw));
-        
-        if (foundSpot) {
-          // 1. 设置地图中心、半径、模式
-          MapView.state.center = { lat: foundSpot.lat, lng: foundSpot.lng };
-          MapView.state.radius = 10;
-          MapView.state.tab = 'near';
-          // 2. 关闭搜索弹窗
-          document.getElementById('modalSearch').classList.remove('show');
-          // 3. 直接跳转到地图页，让用户立刻看到结果
-          App.switchPage('map'); 
-        } else if (kw === '') {
-          // 清空输入框时恢复默认位置
-          MapView.state.center = MapView.state.HOME; 
-          App.renderCurrent();
-        }
-      });
+      topSearchBtn.addEventListener('click', () => App.switchPage('search'));
     }
 
     // 顶栏时间
@@ -889,27 +934,6 @@ const App = (() => {
     document.querySelectorAll('.modal').forEach(m =>
       m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); })
     );
-    // 发帖类型选择
-    document.querySelectorAll('#postTypeRow .pt').forEach(el =>
-      el.addEventListener('click', () => {
-        document.querySelectorAll('#postTypeRow .pt').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
-      })
-    );
-    // 发帖图片
-    document.getElementById('postImgInput').addEventListener('change', e => {
-      const f = e.target.files[0]; if (!f) return;
-      compressImage(f, data => {
-        postImgData = data;
-        document.getElementById('postImgPreview').innerHTML =
-          `<img src="${data}"><span class="del" id="delPostImg">✕</span>`;
-        document.getElementById('delPostImg').addEventListener('click', () => {
-          postImgData = ''; document.getElementById('postImgPreview').innerHTML = '';
-        });
-      });
-    });
-    // 发布
-    document.getElementById('postSubmit').addEventListener('click', submitPost);
 
     // 支持 URL hash 直达页面
     const h = location.hash.replace('#', '');
@@ -919,9 +943,8 @@ const App = (() => {
 
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
-    birdById, viewUserProfile, handleAvatarUpload 
+    birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap 
   };
 })();
 
-/* 启动 */
 document.addEventListener('DOMContentLoaded', () => App.init());
