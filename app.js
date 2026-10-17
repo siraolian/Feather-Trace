@@ -4,11 +4,6 @@
 
 // 图标映射表
 const ICON_MAP = {
-  '🔍': '<i class="ri-search-line"></i>',
-  '🏠': '<i class="ri-home-9-line"></i>',
-  '🛒': '<i class="ri-shopping-bag-4-line"></i>',
-  '💬': '<i class="ri-message-3-line"></i>',
-  '👤': '<i class="ri-user-line"></i>',
   '🐦': '<i class="ri-bird-line"></i>',
   '🏅': '<i class="ri-medal-line"></i>',
   '👍': '<i class="ri-thumb-up-line"></i>',
