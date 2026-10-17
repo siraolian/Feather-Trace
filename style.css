@@ -400,3 +400,26 @@ body {
 .res-info { flex: 1; min-width: 0; }
 .res-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .res-desc { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 我的界面：分组卡片列表 */
+.mine-group {
+  background: #fff; border-radius: 16px; margin: 15px 15px 0; padding: 0 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+.mine-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid #F0F4F0; font-size: 15px; font-weight: 500;
+  cursor: pointer; color: #333;
+}
+.mine-item:last-child { border-bottom: none; }
+.mine-item .left { display: flex; align-items: center; gap: 12px; }
+.mine-item .icon-box {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center;
+  font-size: 16px; background: #F4F9E8; color: var(--green);
+}
+.mine-item .badge { background: #FF5252; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
+
+/* 字体大小调节 */
+body.font-large { font-size: 18px; }
+body.font-large .mine-item { font-size: 18px; }
+body.font-large .card-sub { font-size: 14px; }
