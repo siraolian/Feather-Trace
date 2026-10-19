@@ -507,3 +507,34 @@ i[class^="ri-"] {
 .detail-actions .pa.fish-on .pa-icon, .detail-actions .pa.fish-on .pa-text, .detail-actions .pa.fish-on .pa-num { color: #F59E0B; }
 .comment-user { font-size: 13px; color: #888; margin-bottom: 5px; font-weight: 600; }
 .comment-text { font-size: 14px; color: #333; line-height: 1.5; }
+
+/* ====== 评论输入抽屉 ====== */
+.comment-modal {
+  position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 999;
+  display: none; /* 默认隐藏 */
+}
+.comment-modal.show { display: block; }
+
+.comment-overlay {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s;
+}
+.comment-modal.show .comment-overlay { opacity: 1; }
+
+.comment-input-area {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: #fff; padding: 12px 15px;
+  display: flex; gap: 10px; align-items: center;
+  border-radius: 16px 16px 0 0;
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+.comment-modal.show .comment-input-area { transform: translateY(0); }
+
+.comment-input-area input {
+  flex: 1; background: #F4F5F7; border: none; border-radius: 20px;
+  padding: 12px 16px; font-size: 15px; outline: none; color: #333;
+}
+.comment-input-area .btn {
+  border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: 600;
+}
