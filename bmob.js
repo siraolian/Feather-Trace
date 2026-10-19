@@ -4,17 +4,22 @@ Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa98
 
 // 2. 封装 API
 const DB = {
-  // 注册新用户（带查重）
   async register(email, password, username) {
     try {
-      // 👇 查重：去掉了多余的 "=="
-      const checkQuery = Bmob.Query('Users');
-      checkQuery.equalTo("username", username); 
-      const checkRes = await checkQuery.find();
+      const newUser = Bmob.Object.extend("Users");
+      const user = new newUser();
+      user.set("username", username);
+      user.set("password", password);
+      user.set("email", email);
+      user.set("avatar", "👤");
       
-      if (checkRes.length > 0) {
-        return { success: false, msg: '该用户名已被注册啦' };
-      }
+      const res = await user.save();
+      return { success: true, user: { id: res.id, username: username } };
+    } catch (e) {
+      console.error("注册报错详情:", e);
+      return { success: false, msg: e.message || '注册失败' };
+    }
+  }
 
       // 写入数据库
       const newUser = Bmob.Object.extend("Users");
