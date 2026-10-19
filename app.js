@@ -1685,7 +1685,7 @@ const App = (() => {
     };
   }
 
-  async function handleAuth() {
+    async function handleAuth() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     const username = document.getElementById('authUsername').value.trim();
@@ -1694,37 +1694,42 @@ const App = (() => {
     if (!email || !password) { toast('请填写邮箱和密码'); return; }
     btn.textContent = '处理中...';
 
-    if (isRegisterMode) {
-      if (!username) { toast('请填写用户名'); btn.textContent = '注 册'; return; }
-      
-      const res = await DB.register(email, password, username);
-      if (res.success) {
-        toast('注册成功，自动登录');
-        // 同步到本地用户状态
-        const u = Store.user();
-        u.name = username;
-        u.code = res.user.id; // 把云端的 id 当账号码
-        Store.saveUser(u);
-        closeModal('modalAuth');
-        renderMine(document.getElementById('page-mine'));
+    try {
+      if (isRegisterMode) {
+        if (!username) { toast('请填写用户名'); btn.textContent = '注 册'; return; }
+        
+        const res = await DB.register(email, password, username);
+        if (res && res.success) {
+          toast('注册成功，自动登录');
+          const u = Store.user();
+          u.name = username;
+          u.code = res.user.id;
+          Store.saveUser(u);
+          closeModal('modalAuth');
+          renderMine(document.getElementById('page-mine'));
+        } else {
+          toast(res ? res.msg : '注册失败');
+        }
       } else {
-        toast(res.msg);
+        const res = await DB.login(email, password);
+        if (res && res.success) {
+          toast('登录成功');
+          const u = Store.user();
+          u.name = res.user.username || '云端用户'; 
+          Store.saveUser(u);
+          closeModal('modalAuth');
+          renderMine(document.getElementById('page-mine'));
+        } else {
+          toast(res ? res.msg : '登录失败，请检查网络');
+        }
       }
-    } else {
-      const res = await DB.login(email, password);
-      if (res.success) {
-        toast('登录成功');
-        const u = Store.user();
-        // 注意这里：登录返回的数据如果是普通对象，直接点属性
-        u.name = res.user.username || '云端用户'; 
-        Store.saveUser(u);
-        closeModal('modalAuth');
-        renderMine(document.getElementById('page-mine'));
-      } else {
-        toast(res.msg);
-      }
+    } catch (error) {
+      // 👇 终极保护：防止任何未知错误导致页面白屏或崩溃
+      toast('网络请求出错，请稍后再试');
+      console.error(error);
+    } finally {
+      btn.textContent = isRegisterMode ? '注 册' : '登 录';
     }
-    btn.textContent = isRegisterMode ? '注 册' : '登 录';
   }
   
   return { 
