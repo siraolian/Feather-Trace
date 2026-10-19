@@ -130,6 +130,16 @@
   <div class="modal-body" id="vipBody"></div>
 </div>
 </div>
+
+<!-- ====== 弹层：评论输入框 ====== -->
+<div class="comment-modal" id="commentModal">
+  <div class="comment-overlay" onclick="App.closeCommentModal()"></div>
+  <div class="comment-input-area">
+    <input type="text" id="commentInput" placeholder="说点什么吧..." autocomplete="off">
+    <button class="btn primary" id="commentSendBtn" onclick="App.submitComment()">发送</button>
+  </div>
+</div>
+  
 <!-- 轻提示 -->
 <div id="toast"></div>
 
