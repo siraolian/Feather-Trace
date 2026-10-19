@@ -58,7 +58,7 @@ const App = (() => {
 
   /* ================= 页面切换 ================= */
   const TOP_TABS = ['comm', 'map', 'ai', 'progress'];
-  function switchPage(p) {
+    function switchPage(p) {
     current = p;
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     
@@ -69,34 +69,37 @@ const App = (() => {
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
     
+    // 更新顶部 Tab 的高亮状态
     document.querySelectorAll('.top-tabs .tab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === p && TOP_TABS.includes(p));
     });
+    
+    // 更新底部 Tab 的高亮状态
     document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
       const tab = el.dataset.tab;
       let active = false;
-      if (tab === 'home') active = TOP_TABS.includes(p);
-      else if (tab === 'mine') active = ['mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile'].includes(p);
+      if (tab === 'home') active = TOP_TABS.includes(p) || p === 'comm';
+      else if (tab === 'mine') active = ['mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'settings', 'history', 'favorites', 'follow-list'].includes(p);
       else active = tab === p;
       el.classList.toggle('active', active);
     });
     
-    // 控制顶栏和底栏显示隐藏
+    // 👇 【强制控制顶栏和底栏】
     const topTabs = document.querySelector('.top-tabs-wrapper');
     const bottomNav = document.querySelector('.bottom-nav');
     
-    // 👇 【修复】底栏：只要是主界面（首页、售卖、信息、我的），必须显示底栏！
-    if (['comm', 'map', 'ai', 'progress', 'shop', 'msg', 'mine'].includes(p)) {
-      if (bottomNav) bottomNav.style.display = 'flex';
+    // 隐藏底栏（只在深层页面隐藏）
+    if (['search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail', 'create-post', 'edit-profile'].includes(p)) {
+      if (bottomNav) bottomNav.style.setProperty('display', 'none', 'important');
     } else {
-      if (bottomNav) bottomNav.style.display = 'none';
+      if (bottomNav) bottomNav.style.setProperty('display', 'flex', 'important');
     }
 
-    // 👇 【修复】顶栏：只有在四大核心页（交流/地图/AI/进度）才显示顶栏
+    // 隐藏顶栏（只在四个主页面显示，其余全隐藏）
     if (['comm', 'map', 'ai', 'progress'].includes(p)) {
-     if (topTabs) topTabs.style.display = 'flex'; // 用 style 直接控制，覆盖 class
+      if (topTabs) topTabs.style.setProperty('display', 'flex', 'important');
     } else {
-      if (topTabs) topTabs.style.display = 'none';
+      if (topTabs) topTabs.style.setProperty('display', 'none', 'important');
     }
     
     renderCurrent();
@@ -1226,11 +1229,19 @@ const App = (() => {
         <div style="font-size:12px; color:#aaa; text-align:right;">发布于 ${p.time}</div>
       </div>
       
-      <div class="detail-actions">
-        <span class="pa ${liked ? 'on' : ''}" onclick="App.toggleLike('${p.id}', this)">👍 <b>${p.likes}</b> 点赞</span>
-        <span class="pa">💬 <b>${p.comments}</b> 评论</span>
-        <span class="pa ${fished ? 'fish-on' : ''}" onclick="App.toggleFish('${p.id}', this)">🐟 <b>${p.fish}</b> 打赏</span>
-        <span class="pa ${saved ? 'on' : ''}" onclick="App.toggleSave('${p.id}', this)">${saved ? '⭐ 已收藏' : '☆ 收藏'}</span>
+           <div class="detail-actions">
+        <span class="pa ${liked ? 'on' : ''}" onclick="App.toggleLike('${p.id}', this)">
+          <div class="pa-icon">👍</div><div class="pa-num">${p.likes}</div><div class="pa-text">点赞</div>
+        </span>
+        <span class="pa">
+          <div class="pa-icon">💬</div><div class="pa-num">${p.comments}</div><div class="pa-text">评论</div>
+        </span>
+        <span class="pa ${fished ? 'fish-on' : ''}" onclick="App.toggleFish('${p.id}', this)">
+          <div class="pa-icon">🐟</div><div class="pa-num">${p.fish}</div><div class="pa-text">打赏</div>
+        </span>
+        <span class="pa ${saved ? 'on' : ''}" onclick="App.toggleSave('${p.id}', this)">
+          <div class="pa-icon">${saved ? '⭐' : '☆'}</div><div class="pa-text" style="margin-top:2px;">${saved ? '已收藏' : '收藏'}</div>
+        </span>
       </div>
 
       <div class="comment-section">
