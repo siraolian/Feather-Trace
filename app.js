@@ -105,6 +105,23 @@ const App = (() => {
     renderCurrent();
   }
 
+  // 记录浏览轨迹
+  function addHistory(type, id, title, desc) {
+    let history = Store.history() || [];
+    // 去重：如果看过了，就把旧的删掉，让最新的排在前面
+    history = history.filter(item => !(item.type === type && item.id === id));
+    
+    // 获取当前时间
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+    history.unshift({ type, id, title, desc, time: `今天 ${timeStr}` });
+    // 最多只保留 20 条记录
+    if (history.length > 20) history = history.slice(0, 20);
+    
+    Store.saveHistory(history);
+  }
+  
   function renderCurrent() {
     const containerId = TOP_TABS.includes(current) ? 'page-' + current : 'page-comm';
     const el = document.getElementById(containerId);
@@ -468,6 +485,7 @@ const App = (() => {
   function gotoSpotOnMap(spotId) {
     const spot = SPOTS.find(s => s.id === spotId);
     if (!spot) return;
+    addHistory('spot', spot.id, spot.name, spot.env + ' · ' + spot.level); 
     MapView.state.center = { lat: spot.lat, lng: spot.lng };
     MapView.state.tab = 'near'; 
     switchPage('map');
@@ -977,6 +995,7 @@ const App = (() => {
   /* ================= 鸟种档案 ================= */
   function openBird(id) {
     const b = birdById(id); if (!b) return;
+    addHistory('bird', b.id, b.name, b.group + ' · ' + b.rarity);
     collectBird(id);
     const spots = SPOTS.filter(s => s.birds.includes(id));
     const html = `
@@ -1092,29 +1111,34 @@ const App = (() => {
     });
   }
 
-  /* ================= 新增：浏览记录 ================= */
+  /* ================= 浏览记录 ================= */
   function renderHistory() {
     const el = document.getElementById('page-history');
-    // 这里模拟一些浏览记录
-    const historyData = [
-      { type: 'bird', title: '普通翠鸟', desc: '水鸟 · 较常见', time: '今天 14:30' },
-      { type: 'post', title: '沙湖公园的翠鸟终于蹲到了', desc: '东湖漫游者', time: '昨天' },
-      { type: 'spot', title: '府河湿地', desc: '湿地 · 进阶', time: '10月12日' }
-    ];
+    const historyData = Store.history() || [];
     
     let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-      <div class="mine-group" style="margin:0;">`;
+      <div class="mine-group" style="margin:0; padding: 0 15px;">`;
       
     if (historyData.length === 0) {
-      html += `<div class="empty"><div class="e">🕒</div>暂无浏览记录</div>`;
+      html += `<div class="empty"><div class="e">🕒</div>暂无浏览记录<br>去逛逛帖子和鸟种吧~</div>`;
     } else {
       historyData.forEach(item => {
-        html += `<div class="mine-item">
+        let icon = 'ri-article-line';
+        if (item.type === 'bird') icon = 'ri-bird-line';
+        if (item.type === 'spot') icon = 'ri-map-pin-line';
+        
+        // 点击记录直接跳回原页面
+        let clickAction = '';
+        if (item.type === 'post') clickAction = `onclick="App.openPostDetail('${item.id}')"`;
+        if (item.type === 'bird') clickAction = `onclick="App.openBird('${item.id}')"`;
+        if (item.type === 'spot') clickAction = `onclick="App.gotoSpotOnMap('${item.id}')"`;
+
+        html += `<div class="mine-item" style="cursor:pointer;" ${clickAction}>
           <div class="left">
-            <div class="icon-box"><i class="ri-${item.type === 'bird' ? 'bird-line' : item.type === 'post' ? 'article-line' : 'map-pin-line'}"></i></div>
+            <div class="icon-box"><i class="${icon}"></i></div>
             <div>
-              <div>${item.title}</div>
-              <div style="font-size:12px; color:#888; font-weight:normal;">${item.desc}</div>
+              <div style="font-weight:600;">${escapeHtml(item.title)}</div>
+              <div style="font-size:12px; color:#888; font-weight:normal; margin-top:2px;">${escapeHtml(item.desc || '')}</div>
             </div>
           </div>
           <span style="font-size:12px; color:#aaa;">${item.time}</span>
@@ -1122,7 +1146,7 @@ const App = (() => {
       });
     }
     html += `</div></div>`;
-    el.innerHTML = html;
+    el.innerHTML = replaceIcons(html);
   }
 
   /* ================= 新增：我的收藏 ================= */
@@ -1267,6 +1291,8 @@ const App = (() => {
 
   function openPostDetail(id) {
     currentPostId = id;
+    const p = Store.posts().find(x => x.id === id);
+    if (p) addHistory('post', p.id, p.title, p.author);
     switchPage('post-detail');
   }
 
