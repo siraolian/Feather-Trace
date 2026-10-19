@@ -42,7 +42,7 @@ const Store = (() => {
     ft_myPosts: [],        // 我发布的帖子 id
     ft_liked: [],          // 我点赞过的帖子 id
     ft_fished: [],         // 我打赏过的帖子 id
-    ft_spotSaved: [] 
+    ft_spotSaved: [],
     ft_saved_posts: [] 
   };
 
@@ -62,7 +62,7 @@ const Store = (() => {
     fished() { return api.get('ft_fished'); },
     saveFished(list) { api.set('ft_fished', list); },
     spotSaved() { return api.get('ft_spotSaved'); },
-    saveSpotSaved(list) { api.set('ft_spotSaved', list); }
+    saveSpotSaved(list) { api.set('ft_spotSaved', list); },
     savedPosts() { return api.get('ft_saved_posts'); },
     savePostsSaved(list) { api.set('ft_saved_posts', list); }
   };
