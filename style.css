@@ -448,9 +448,31 @@ i[class^="ri-"] {
 .detail-content { font-size: 15px; color: #333; line-height: 1.7; margin-bottom: 20px; }
 .detail-img { width: 100%; border-radius: 12px; margin-bottom: 20px; }
 
-.detail-actions { display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid #eee; justify-content: center; }
-.detail-actions .pa { font-size: 15px; }
-.detail-actions .pa.active { color: var(--green); font-weight: bold; }
+/* 帖子详情底部操作栏 */
+.detail-actions { 
+  display: flex; 
+  justify-content: space-around; 
+  align-items: center;
+  padding: 12px 0; 
+  border-top: 1px solid #eee; 
+  background: #fff;
+}
+.detail-actions .pa { 
+  display: flex; 
+  flex-direction: column; /* 改为上下排列 */
+  align-items: center; 
+  font-size: 12px; 
+  color: var(--text2); 
+  cursor: pointer;
+  gap: 4px; /* 数字和文字之间的间距 */
+  white-space: nowrap; /* 强制不换行 */
+}
+.detail-actions .pa b {
+  font-size: 16px;
+  color: #333;
+}
+.detail-actions .pa.on, .detail-actions .pa.on b { color: var(--green); }
+.detail-actions .pa.fish-on, .detail-actions .pa.fish-on b { color: #F59E0B; }
 
 /* 评论区 */
 .comment-section { background: #fff; margin-top: 10px; padding: 20px; }
