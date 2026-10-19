@@ -71,4 +71,43 @@ const DB = {
       return [];
     }
   }
+
+    // 👇 新增：发送消息
+  async sendMsg(sender, receiver, text) {
+    try {
+      const newMsg = Bmob.Query('Messages');
+      newMsg.set("sender", sender);
+      newMsg.set("receiver", receiver);
+      newMsg.set("text", text);
+      const res = await newMsg.save();
+      return res; // 成功会返回数据，包含 objectId
+    } catch (e) {
+      console.error("发送失败", e);
+      return null;
+    }
+  },
+
+  // 👇 新增：获取聊天记录（拉取我和某人之间的所有消息）
+  async getMsgs(userA, userB) {
+    try {
+      const query1 = Bmob.Query('Messages');
+      query1.equalTo("sender", "==", userA);
+      query1.equalTo("receiver", "==", userB);
+
+      const query2 = Bmob.Query('Messages');
+      query2.equalTo("sender", "==", userB);
+      query2.equalTo("receiver", "==", userA);
+
+      // 使用 Bmob 的或查询
+      const mainQuery = Bmob.Query('Messages');
+      mainQuery.orQuery([query1, query2]); // 找出 A发给B 和 B发给A 的所有数据
+      
+      const res = await mainQuery.find();
+      // 按时间排序（Bmob 返回的顺序可能乱）
+      return res.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); 
+    } catch (e) {
+      console.error("获取记录失败", e);
+      return [];
+    }
+  }
 };
