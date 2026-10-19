@@ -431,3 +431,33 @@ i[class^="ri-"] {
   position: relative;
   top: -2px; /* 稍微往上抬一点点，跟文字视觉更平齐 */
 }
+
+/* 帖子详情页 */
+.detail-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
+.detail-header .back { font-size: 20px; color: #333; cursor: pointer; }
+.detail-header .title { font-size: 16px; font-weight: 600; }
+.detail-body { background: #fff; padding: 20px; }
+.detail-author { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.detail-author .avatar { width: 44px; height: 44px; font-size: 22px; }
+.detail-author .info { flex: 1; }
+.detail-author .name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px;}
+.detail-author .time { font-size: 12px; color: #888; margin-top: 3px; }
+.btn-follow { border: 1px solid var(--green); color: var(--green); padding: 4px 12px; border-radius: 20px; font-size: 12px; background: transparent; cursor: pointer; }
+
+.detail-title { font-size: 20px; font-weight: 700; margin-bottom: 15px; line-height: 1.4; }
+.detail-content { font-size: 15px; color: #333; line-height: 1.7; margin-bottom: 20px; }
+.detail-img { width: 100%; border-radius: 12px; margin-bottom: 20px; }
+
+.detail-actions { display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid #eee; justify-content: center; }
+.detail-actions .pa { font-size: 15px; }
+.detail-actions .pa.active { color: var(--green); font-weight: bold; }
+
+/* 评论区 */
+.comment-section { background: #fff; margin-top: 10px; padding: 20px; }
+.comment-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; }
+.comment-item { display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #f5f5f5; padding-bottom: 15px; }
+.comment-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.comment-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--green-light); display: flex; justify-content: center; align-items: center; font-size: 16px; flex-shrink: 0; }
+.comment-content { flex: 1; }
+.comment-user { font-size: 13px; color: #888; margin-bottom: 5px; font-weight: 600; }
+.comment-text { font-size: 14px; color: #333; line-height: 1.5; }
