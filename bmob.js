@@ -54,20 +54,20 @@ const DB = {
     }
   },
   
-    // 搜索其他用户（终极降维版：全量拉取+前端过滤）
+   // 搜索其他用户（彻底兼容 2.4.1 版）
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      // 1. 拉取数据库中所有的用户（目前演示阶段用户少，这招绝对管用）
+      // 1. 拉取所有用户
       const results = await query.find();
       
-      // 2. 把结果转成普通数组格式
+      // 2. 直接按 JSON 对象处理（注意这里不用 .get 了）
       const userList = results.map(item => ({
-        username: item.get('username'),
-        avatar: item.get('avatar') || '👤'
+        username: item.username,       // 👈 直接点属性
+        avatar: item.avatar || '👤'    // 👈 直接点属性
       }));
 
-      // 3. 在网页本地进行模糊匹配（只要包含这个关键词就留下）
+      // 3. 本地模糊过滤
       const filteredUsers = userList.filter(u => 
         u.username && u.username.includes(keyword)
       );
