@@ -717,17 +717,18 @@ const App = (() => {
 
     let html = `
       <div class="mine-head" style="padding-bottom: 30px;">
-      <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 30px; background: rgba(255,255,255,0.2); color: #fff;">
-  ${u.avatar && u.avatar.startsWith('data:image') 
-    ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
-    : (u.avatar && u.avatar.length <= 2 ? u.avatar : (u.name ? u.name[0] : '鸟'))
-  }
-</span>
+        <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 30px; background: rgba(255,255,255,0.2); color: #fff;">
+          ${u.avatar && u.avatar.startsWith('data:image') 
+            ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
+            : (u.avatar && u.avatar.length <= 2 ? u.avatar : (u.name ? u.name[0] : '鸟'))
+          }
+        </span>
         <div>
           <div class="mine-name" style="font-size: 22px;">${escapeHtml(u.name)}</div>
           <div class="mine-code" style="margin-top: 8px; color: rgba(255,255,255,0.8);">ID: ${u.code}</div>
           
-                  <div style="display: flex; gap: 20px; margin-top: 10px; color: #fff; font-size: 13px;">
+          <!-- 粉丝/关注数据区 -->
+          <div style="display: flex; gap: 20px; margin-top: 10px; color: #fff; font-size: 13px;">
             <div style="display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation(); App.switchPage('fans-list')">
               <b style="font-size: 16px; cursor: pointer;">${followersCount}</b> 
               <span style="cursor: pointer; padding: 2px 5px;">粉丝</span>
@@ -741,6 +742,7 @@ const App = (() => {
               <span style="padding: 2px 5px;">获赞</span>
             </div>
           </div>
+        </div>
       </div>
       
       <!-- 数据统计面板 -->
