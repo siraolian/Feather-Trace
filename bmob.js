@@ -1,4 +1,4 @@
-// 1. 初始化 Bmob（老版本 SDK 不需要安全码，直接传 AppID 和 REST Key）
+// 1. 初始化 Bmob（老版本 SDK）
 const Bmob = window.Bmob;
 Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa9834a30");
 
@@ -7,10 +7,10 @@ const DB = {
   // 注册新用户（带查重）
   async register(email, password, username) {
     try {
-      // 查重
-      const query = Bmob.Query('Users');
-      query.equalTo("username", username);
-      const checkRes = await query.find();
+      // 👇 查重：去掉了多余的 "=="
+      const checkQuery = Bmob.Query('Users');
+      checkQuery.equalTo("username", username); 
+      const checkRes = await checkQuery.find();
       
       if (checkRes.length > 0) {
         return { success: false, msg: '该用户名已被注册啦' };
@@ -54,7 +54,6 @@ const DB = {
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      // 模糊匹配
       query.equalTo("username", new Bmob.RegExp({ regexp: keyword, options: 'i' }));
       
       const results = await query.find();
