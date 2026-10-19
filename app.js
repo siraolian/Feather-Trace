@@ -2,6 +2,7 @@
  * Feather Trace —— 主逻辑
  * ============================================================ */
 
+  let currentChatUser = '';
 
 // 图标映射表
 const ICON_MAP = {
@@ -64,7 +65,7 @@ const App = (() => {
     
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail', 'chat-detail'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
@@ -89,7 +90,7 @@ const App = (() => {
     const bottomNav = document.querySelector('.bottom-nav');
     
     // 隐藏底栏（只在深层页面隐藏）
-    if (['search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail', 'create-post', 'edit-profile'].includes(p)) {
+    if (['search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail', 'create-post', 'edit-profile', 'chat-detail'].includes(p)) {
       if (bottomNav) bottomNav.style.setProperty('display', 'none', 'important');
     } else {
       if (bottomNav) bottomNav.style.setProperty('display', 'flex', 'important');
@@ -146,6 +147,7 @@ const App = (() => {
     else if (current === 'follow-list') renderFollowList();
     else if (current === 'fans-list') renderFansList(); 
     else if (current === 'post-detail') renderPostDetail();
+    else if (current === 'chat-detail') renderChatDetail();
   }
 
   /* ================= 交流区 ================= */
@@ -728,7 +730,7 @@ const App = (() => {
     ];
     let html = `<div class="section-title">📬 私信与通知</div><div class="spot-list">`;
     html += msgs.map(m => `
-      <div class="msg-item">
+        <div class="msg-item" onclick="${m.type === '私信' ? `App.openChat('${m.name}')` : ''}" style="${m.type === '私信' ? 'cursor:pointer;' : ''}">
         <span class="msg-avatar">${m.icon}</span>
         <div class="msg-info">
           <div class="msg-name">${m.name} ${m.unread ? '<span class="msg-badge">新</span>' : ''}</div>
@@ -1561,13 +1563,90 @@ const App = (() => {
     toast('回复成功');
     renderPostDetail(); // 重绘
   }
+
+  /* ================= 聊天系统 ================= */
+  function openChat(userName) {
+    currentChatUser = userName;
+    switchPage('chat-detail');
+  }
+
+  function renderChatDetail() {
+    const el = document.getElementById('page-chat-detail');
+    if (!currentChatUser) { switchPage('msg'); return; }
+
+    // 读取本地聊天记录
+    let allRecords = Store.chatRecords() || {};
+    let msgs = allRecords[currentChatUser] || [
+      // 初始默认聊天记录
+      { isMe: false, text: '你好呀！看你最近在沙湖拍了不少好照片，能交流一下吗？' }
+    ];
+
+    // 生成气泡 HTML
+    let chatHtml = msgs.map(m => `
+      <div class="chat-msg ${m.isMe ? 'right' : 'left'}">
+        <div class="chat-avatar">${m.isMe ? Store.user().avatar : (RANK_SEED.find(u => u.name === currentChatUser)?.icon || '🐦')}</div>
+        <div class="chat-bubble">${escapeHtml(m.text)}</div>
+      </div>
+    `).join('');
+
+    let html = `
+      <div class="chat-header">
+        <span class="back" onclick="App.switchPage('msg')">‹</span>
+        <span class="title">${escapeHtml(currentChatUser)}</span>
+        <span style="width:20px;"></span>
+      </div>
+      <div class="chat-content" id="chatContent">
+        ${chatHtml}
+      </div>
+      <div class="chat-bottom-input">
+        <input type="text" id="chatMsgInput" placeholder="发消息..." autocomplete="off">
+        <button id="chatSendBtn">发送</button>
+      </div>
+    `;
+    el.innerHTML = html;
+
+    // 滚动到底部
+    const content = el.querySelector('#chatContent');
+    content.scrollTop = content.scrollHeight;
+
+    // 发送事件
+    const input = el.querySelector('#chatMsgInput');
+    const sendBtn = el.querySelector('#chatSendBtn');
+    
+    const sendMsg = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      
+      // 保存我的消息
+      msgs.push({ isMe: true, text });
+      allRecords[currentChatUser] = msgs;
+      Store.saveChatRecords(allRecords);
+      
+      // 立刻渲染
+      input.value = '';
+      renderChatDetail();
+      
+      // 模拟对方回复
+      setTimeout(() => {
+        const replies = ['测试版，对面不是真人'];
+        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+        msgs.push({ isMe: false, text: randomReply });
+        allRecords[currentChatUser] = msgs;
+        Store.saveChatRecords(allRecords);
+        renderChatDetail();
+      }, 1000);
+    };
+
+    sendBtn.addEventListener('click', sendMsg);
+    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
+  }
   
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
     openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow,
     openCommentModal, closeCommentModal, submitComment,
-    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply
+    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply, openChat
   };
 })();
 
