@@ -675,9 +675,12 @@ const App = (() => {
 
     let html = `
       <div class="mine-head" style="padding-bottom: 30px;">
-        <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 35px;">
-          ${u.avatar && u.avatar.startsWith('data:image') ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : u.avatar}
-        </span>
+      <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 30px; background: rgba(255,255,255,0.2); color: #fff;">
+  ${u.avatar && u.avatar.startsWith('data:image') 
+    ? `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` 
+    : (u.avatar && u.avatar.length <= 2 ? u.avatar : (u.name ? u.name[0] : '鸟'))
+  }
+</span>
         <div>
           <div class="mine-name" style="font-size: 22px;">${escapeHtml(u.name)}</div>
           <div class="mine-code" style="margin-top: 8px; color: rgba(255,255,255,0.8);">ID: ${u.code}</div>
