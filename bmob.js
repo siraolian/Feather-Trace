@@ -54,18 +54,25 @@ const DB = {
     }
   },
   
-   // 搜索其他用户（模糊搜索）
+    // 搜索其他用户（终极降维版：全量拉取+前端过滤）
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      // 👇 使用 Bmob 官方提供的 contains 方法，专门用来做模糊匹配
-      query.contains('username', keyword); 
-      
+      // 1. 拉取数据库中所有的用户（目前演示阶段用户少，这招绝对管用）
       const results = await query.find();
-      return results.map(item => ({
+      
+      // 2. 把结果转成普通数组格式
+      const userList = results.map(item => ({
         username: item.get('username'),
         avatar: item.get('avatar') || '👤'
       }));
+
+      // 3. 在网页本地进行模糊匹配（只要包含这个关键词就留下）
+      const filteredUsers = userList.filter(u => 
+        u.username && u.username.includes(keyword)
+      );
+
+      return filteredUsers;
     } catch (e) {
       console.error('搜索报错详情:', e);
       return [];
