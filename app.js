@@ -816,8 +816,10 @@ const App = (() => {
       <div class="card"><div class="card-title">编辑资料</div>
       <div style="display:flex; justify-content:center; margin-bottom:15px;">
         <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
-          ${isImgAvatar ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:40px;">${u.avatar}</span>`}
-        </div>
+         ${isImgAvatar 
+  ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` 
+  : `<span style="font-size:40px;">${(u.avatar && !u.avatar.includes('<')) ? u.avatar : '🐦'}</span>`
+}
         <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
       </div>
       <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
@@ -827,7 +829,7 @@ const App = (() => {
         ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
       </div>
       <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
-    el.innerHTML = replaceIcons(html);
+        el.innerHTML = html; 
     
     el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
       el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
