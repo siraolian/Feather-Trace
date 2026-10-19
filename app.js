@@ -2,7 +2,6 @@
  * Feather Trace —— 主逻辑
  * ============================================================ */
 
-  let currentPostId = '';
 
 // 图标映射表
 const ICON_MAP = {
@@ -44,6 +43,7 @@ const App = (() => {
 
   let current = 'comm';
   let currentProfileName = ''; 
+  let currentPostId = '';
 
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -719,7 +719,7 @@ const App = (() => {
           <div class="left"><div class="icon-box"><i class="ri-star-line"></i></div>我的收藏</div>
           <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
         </div>
-        <div class="mine-item" onclick="toast('已在下方展示你的帖子')">
+        <div class="mine-item" onclick="App.toast('已在下方展示你的帖子')">
           <div class="left"><div class="icon-box"><i class="ri-article-line"></i></div>我的帖子</div>
           <span class="arrow"><i class="ri-arrow-right-s-line"></i></span>
         </div>
