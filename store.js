@@ -43,7 +43,10 @@ const Store = (() => {
     ft_liked: [],          // 我点赞过的帖子 id
     ft_fished: [],         // 我打赏过的帖子 id
     ft_spotSaved: [],
-    ft_saved_posts: [] 
+    ft_saved_posts: [],
+    ft_history: [],
+    ft_following: ['鸟导阿强', '镜头里的风'], // 默认关注了这两个
+    ft_followers: ['东湖漫游者', '望江楼老周'] 
   };
 
   const api = {
@@ -64,7 +67,13 @@ const Store = (() => {
     spotSaved() { return api.get('ft_spotSaved'); },
     saveSpotSaved(list) { api.set('ft_spotSaved', list); },
     savedPosts() { return api.get('ft_saved_posts'); },
-    savePostsSaved(list) { api.set('ft_saved_posts', list); }
+    savePostsSaved(list) { api.set('ft_saved_posts', list); },
+    history() { return api.get('ft_history'); },
+    saveHistory(list) { api.set('ft_history', list); },
+    following() { return api.get('ft_following'); }, 
+    saveFollowing(list) { api.set('ft_following', list); }, 
+    followers() { return api.get('ft_followers'); },        
+    saveFollowers(list) { api.set('ft_followers', list); }  
   };
   return api;
 })();
