@@ -325,7 +325,7 @@ const App = (() => {
     reader.readAsDataURL(file);
   }
 
-  function submitPost(el) {
+    function submitPost(el) {
     const title = el.querySelector('#postTitle').value.trim();
     const content = el.querySelector('#postContent').value.trim();
     if (!title) { toast('请填写标题'); return; }
@@ -333,7 +333,7 @@ const App = (() => {
     const u = Store.user();
     const post = {
       id: 'u' + Date.now(), type: selectedPostType, author: u.name, avatar: u.avatar, time: '刚刚',
-      title, content, likes: 0, comments: 0, fish: 0, image: postImgData || undefined, hot: false
+      title, content, likes: 0, comments: 0, fish: 0, image: postImgData || undefined, hot: false, realComments: []
     };
     
     const posts = Store.posts(); 
@@ -345,8 +345,24 @@ const App = (() => {
     Store.saveMyPosts(mine);
     
     addExp(10);
-    toast('发布成功，获得经验+10');
     
+    // 👇 智能检测未收录鸟种
+    const textToScan = title + content;
+    const collected = Store.birds() || [];
+    let newBirds = [];
+    BIRDS.forEach(b => {
+      if (textToScan.includes(b.name) && !collected.includes(b.id)) {
+        newBirds.push(b);
+      }
+    });
+    if (newBirds.length > 0) {
+      const names = newBirds.map(b => b.name).join('、');
+      if (confirm(`🐦 智能识别：您的帖子提到了「${names}」，检测到您还未收录。是否一键收录？`)) {
+        newBirds.forEach(b => collectBird(b.id));
+      }
+    }
+
+    toast('发布成功，获得经验+10');
     commTab = selectedPostType; 
     App.switchPage('comm'); 
   }
@@ -828,16 +844,31 @@ const App = (() => {
     el.innerHTML = html; 
   }
   
-  /* ================= 独立页面渲染函数 ================= */
-  function renderMyBirds() {
+    function renderMyBirds() {
     const el = document.getElementById('page-my-birds');
     const birds = Store.birds().map(birdById).filter(Boolean);
-    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>`;
-    if (birds.length) {
-      html += `<div class="ai-cards">${birds.map(b => `
-        <div class="ai-card" data-ft="bird-open" data-id="${b.id}">
+    const customBirds = Store.customBirds() || []; // 读取自定义鸟种
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+    <button class="btn primary block" style="margin-bottom:15px;" onclick="App.openUploadBirdModal()">+ 上传新鸟种记录</button>`;
+
+    if (birds.length || customBirds.length) {
+      html += `<div class="ai-cards">`;
+      // 系统鸟种
+      birds.forEach(b => {
+        html += `<div class="ai-card" data-ft="bird-open" data-id="${b.id}">
           <div class="t">${b.name}</div><div class="d">${b.group} · ${b.rarity}</div>
-        </div>`).join('')}</div>`;
+        </div>`;
+      });
+      // 用户自定义鸟种
+      customBirds.forEach(b => {
+        html += `<div class="ai-card" style="border:1px solid var(--green-light);">
+          ${b.image ? `<img src="${b.image}" style="width:100%; height:80px; object-fit:cover; border-radius:8px; margin-bottom:6px;">` : ''}
+          <div class="t">${b.name} <span class="tag" style="font-size:10px;">我上传的</span></div>
+          <div class="d">📍 ${b.location}</div>
+        </div>`;
+      });
+      html += `</div>`;
     } else {
       html += `<div class="empty"><div class="e">🐦</div>还没有收藏鸟种<br>去「地图」或「AI识别」收录吧</div>`;
     }
@@ -1296,24 +1327,42 @@ const App = (() => {
     switchPage('post-detail');
   }
 
-  function renderPostDetail() {
+    function renderPostDetail() {
     const el = document.getElementById('page-post-detail');
     const p = Store.posts().find(x => x.id === currentPostId);
     if (!p) { switchPage('comm'); return; }
     
     const liked = Store.liked().includes(p.id);
     const fished = Store.fished().includes(p.id);
-    const saved = Store.savedPosts()?.includes(p.id) || false;
+    const savedList = Store.savedPosts() || [];
+    const saved = savedList.includes(p.id);
 
-    // 模拟几条评论数据（随机生成）
-    // 合并模拟评论和用户真实发出的评论
-    let mockComments = [
-      { user: '镜头里的风', avatar: '📷', text: '太美了！下次带我一个！' },
-      { user: '鸟导阿强', avatar: '🪶', text: '这个机位绝佳，光线很好。' }
-    ];
-    if (p.realComments && p.realComments.length > 0) {
-      mockComments = [...p.realComments, ...mockComments]; // 真实评论放前面
+    // 如果没有真实评论数组，初始化一个
+    if (!p.realComments) {
+       p.realComments = [
+         { user: '镜头里的风', avatar: '📷', text: '太美了！下次带我一个！', likes: 3, isLiked: false, replies: [] },
+         { user: '鸟导阿强', avatar: '🪶', text: '这个机位绝佳，光线很好。', likes: 1, isLiked: false, replies: [] }
+       ];
     }
+
+    let commentsHtml = p.realComments.map((c, idx) => {
+      return `<div class="comment-item">
+        <div class="comment-avatar">${c.avatar}</div>
+        <div class="comment-content">
+          <div class="comment-user">${c.user}</div>
+          <div class="comment-text">${escapeHtml(c.text)}</div>
+          <div class="comment-actions">
+            <span onclick="App.likeComment(${idx})" class="${c.isLiked ? 'liked' : ''}">${c.isLiked ? '❤️' : '🤍'} ${c.likes || 0}</span>
+            <span onclick="App.openReplyModal(${idx})">💬 回复</span>
+          </div>
+          ${c.replies && c.replies.length > 0 ? `
+            <div class="comment-replies">
+              ${c.replies.map(r => `<div><b>${r.user}:</b> ${escapeHtml(r.text)}</div>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      </div>`;
+    }).join('');
 
     let html = `
       <div class="detail-header">
@@ -1329,13 +1378,7 @@ const App = (() => {
             <div class="name">${escapeHtml(p.author)} <span style="font-size:10px; background:#FFD54F; padding:1px 4px; border-radius:4px;">Lv.6</span></div>
             <div class="time">${p.time} · 来自武汉</div>
           </div>
-            ${(() => {
-            const isFollowed = (Store.following() || []).includes(p.author);
-            return `<button class="btn-follow" onclick="App.toggleFollow('${escapeHtml(p.author)}', this)" 
-              style="${isFollowed ? 'color:#888; background:#f5f5f5; border-color:#eee;' : ''}">
-              ${isFollowed ? '已关注' : '+ 关注'}
-            </button>`;
-          })()}
+          <button class="btn-follow" onclick="App.toggleFollow('${escapeHtml(p.author)}', this)" style="${(Store.following()||[]).includes(p.author) ? 'color:#888; background:#f5f5f5; border-color:#eee;' : ''}">${(Store.following()||[]).includes(p.author) ? '已关注' : '+ 关注'}</button>
         </div>
         
         <div class="detail-title">${escapeHtml(p.title)}</div>
@@ -1344,7 +1387,7 @@ const App = (() => {
         <div style="font-size:12px; color:#aaa; text-align:right;">发布于 ${p.time}</div>
       </div>
       
-           <div class="detail-actions">
+      <div class="detail-actions">
         <span class="pa ${liked ? 'on' : ''}" onclick="App.toggleLike('${p.id}', this)">
           <div class="pa-icon">👍</div><div class="pa-num">${p.likes}</div><div class="pa-text">点赞</div>
         </span>
@@ -1361,15 +1404,7 @@ const App = (() => {
 
       <div class="comment-section">
         <div class="comment-title">全部评论 (${p.comments})</div>
-        ${mockComments.map(c => `
-          <div class="comment-item">
-            <div class="comment-avatar">${c.avatar}</div>
-            <div class="comment-content">
-              <div class="comment-user">${c.user}</div>
-              <div class="comment-text">${c.text}</div>
-            </div>
-          </div>
-        `).join('')}
+        ${commentsHtml}
       </div>
     `;
     
@@ -1420,12 +1455,108 @@ const App = (() => {
     closeCommentModal();
     renderPostDetail(); // 刷新详情页
   }
+
+  /* ================= 新增功能：上传鸟种 ================= */
+  let uploadBirdImgData = '';
+  function openUploadBirdModal() {
+    uploadBirdImgData = '';
+    document.getElementById('uploadBirdName').value = '';
+    document.getElementById('uploadBirdLoc').value = '';
+    document.getElementById('uploadBirdDesc').value = '';
+    document.getElementById('uploadBirdImgPreview').style.display = 'none';
+    
+    // 绑定图片预览
+    const fileInput = document.getElementById('uploadBirdImgInput');
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImage(file, data => {
+        uploadBirdImgData = data;
+        const preview = document.getElementById('uploadBirdImgPreview');
+        preview.src = data;
+        preview.style.display = 'inline-block';
+      });
+    };
+    openModal('modalUploadBird', '上传新鸟种', document.getElementById('modalUploadBird').querySelector('.modal-body').innerHTML);
+  }
+
+  function submitUploadBird() {
+    const name = document.getElementById('uploadBirdName').value.trim();
+    const loc = document.getElementById('uploadBirdLoc').value.trim();
+    const desc = document.getElementById('uploadBirdDesc').value.trim();
+    
+    if (!name || !loc) { toast('请填写鸟类名称和发现地点'); return; }
+    
+    const customBirds = Store.customBirds() || [];
+    customBirds.push({
+      id: 'c' + Date.now(),
+      name,
+      location: loc,
+      desc,
+      image: uploadBirdImgData,
+      time: '刚刚'
+    });
+    Store.saveCustomBirds(customBirds);
+    closeModal('modalUploadBird');
+    toast('收录成功！');
+    renderMyBirds(); // 刷新列表
+  }
+
+  /* ================= 新增功能：评论点赞与回复 ================= */
+  let replyTargetIndex = -1;
+
+  function likeComment(idx) {
+    const posts = Store.posts();
+    const p = posts.find(x => x.id === currentPostId);
+    if (!p || !p.realComments) return;
+    
+    const c = p.realComments[idx];
+    c.isLiked = !c.isLiked;
+    c.likes = c.isLiked ? (c.likes || 0) + 1 : (c.likes || 1) - 1;
+    
+    Store.savePosts(posts);
+    renderPostDetail(); // 重绘
+  }
+
+  function openReplyModal(idx) {
+    replyTargetIndex = idx;
+    const modal = document.getElementById('replyModal');
+    const input = document.getElementById('replyInput');
+    input.value = '';
+    modal.classList.add('show');
+    setTimeout(() => input.focus(), 300);
+  }
+
+  function closeReplyModal() {
+    document.getElementById('replyModal').classList.remove('show');
+  }
+
+  function submitReply() {
+    const input = document.getElementById('replyInput');
+    const text = input.value.trim();
+    if (!text) { toast('回复不能为空'); return; }
+    
+    const posts = Store.posts();
+    const p = posts.find(x => x.id === currentPostId);
+    if (!p || !p.realComments || replyTargetIndex === -1) return;
+    
+    const c = p.realComments[replyTargetIndex];
+    if (!c.replies) c.replies = [];
+    
+    c.replies.push({ user: Store.user().name, text });
+    Store.savePosts(posts);
+    
+    closeReplyModal();
+    toast('回复成功');
+    renderPostDetail(); // 重绘
+  }
   
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
     openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow,
-    openCommentModal, closeCommentModal, submitComment
+    openCommentModal, closeCommentModal, submitComment,
+    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply
   };
 })();
 
