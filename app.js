@@ -94,9 +94,9 @@ const App = (() => {
 
     // 👇 【修复】顶栏：只有在四大核心页（交流/地图/AI/进度）才显示顶栏
     if (['comm', 'map', 'ai', 'progress'].includes(p)) {
-      if (topTabs) topTabs.classList.remove('hidden');
+     if (topTabs) topTabs.style.display = 'flex'; // 用 style 直接控制，覆盖 class
     } else {
-      if (topTabs) topTabs.classList.add('hidden');
+      if (topTabs) topTabs.style.display = 'none';
     }
     
     renderCurrent();
