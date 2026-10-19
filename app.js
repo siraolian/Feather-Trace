@@ -782,6 +782,9 @@ const App = (() => {
         <div>
           <div class="mine-name" style="font-size: 22px;">${escapeHtml(u.name)}</div>
           <div class="mine-code" style="margin-top: 8px; color: rgba(255,255,255,0.8);">ID: ${u.code}</div>
+           <button class="btn ghost" style="margin-top: 8px; padding: 4px 10px; font-size: 11px; border-radius: 20px;" onclick="App.openAuthModal()">
+            ☁️ 绑定/登录云端账号
+          </button>
           
           <!-- 粉丝/关注数据区 -->
           <div style="display: flex; gap: 20px; margin-top: 10px; color: #fff; font-size: 13px;">
@@ -1655,13 +1658,81 @@ const App = (() => {
     sendBtn.addEventListener('click', sendMsg);
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
   }
+
+  /* ================= 真实云端账号系统 ================= */
+  let isRegisterMode = false;
+
+  function openAuthModal() {
+    document.getElementById('modalAuth').classList.add('show');
+    document.getElementById('authUsername').value = '';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    
+    // 切换模式
+    document.getElementById('authSwitchText').onclick = () => {
+      isRegisterMode = !isRegisterMode;
+      if (isRegisterMode) {
+        document.getElementById('authTitle').textContent = '注册新账号';
+        document.getElementById('authUsername').style.display = 'block';
+        document.getElementById('authSubmitBtn').textContent = '注 册';
+        document.getElementById('authSwitchText').textContent = '已有账号？去登录';
+      } else {
+        document.getElementById('authTitle').textContent = '登录账号';
+        document.getElementById('authUsername').style.display = 'none';
+        document.getElementById('authSubmitBtn').textContent = '登 录';
+        document.getElementById('authSwitchText').textContent = '没有账号？去注册';
+      }
+    };
+  }
+
+  async function handleAuth() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    const username = document.getElementById('authUsername').value.trim();
+    const btn = document.getElementById('authSubmitBtn');
+
+    if (!email || !password) { toast('请填写邮箱和密码'); return; }
+    btn.textContent = '处理中...';
+
+    if (isRegisterMode) {
+      if (!username) { toast('请填写用户名'); btn.textContent = '注 册'; return; }
+      
+      const res = await DB.register(email, password, username);
+      if (res.success) {
+        toast('注册成功，自动登录');
+        // 同步到本地用户状态
+        const u = Store.user();
+        u.name = username;
+        u.code = res.user.id; // 把云端的 id 当账号码
+        Store.saveUser(u);
+        closeModal('modalAuth');
+        renderMine(document.getElementById('page-mine'));
+      } else {
+        toast(res.msg);
+      }
+    } else {
+      const res = await DB.login(email, password);
+      if (res.success) {
+        toast('登录成功');
+        const u = Store.user();
+        // 注意这里：登录返回的数据如果是普通对象，直接点属性
+        u.name = res.user.username || '云端用户'; 
+        Store.saveUser(u);
+        closeModal('modalAuth');
+        renderMine(document.getElementById('page-mine'));
+      } else {
+        toast(res.msg);
+      }
+    }
+    btn.textContent = isRegisterMode ? '注 册' : '登 录';
+  }
   
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
     openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow,
     openCommentModal, closeCommentModal, submitComment,
-    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply, openChat
+    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply, openChat, openAuthModal, handleAuth
   };
 })();
 
