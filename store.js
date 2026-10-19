@@ -47,7 +47,8 @@ const Store = (() => {
     ft_history: [],
     ft_following: ['鸟导阿强', '镜头里的风'], // 默认关注了这两个
     ft_followers: ['东湖漫游者', '望江楼老周'],
-    ft_custom_birds: []
+    ft_custom_birds: [],
+    ft_chat_records: {}
   };
 
   const api = {
@@ -76,7 +77,9 @@ const Store = (() => {
     followers() { return api.get('ft_followers'); },        
     saveFollowers(list) { api.set('ft_followers', list); },
     customBirds() { return api.get('ft_custom_birds'); },
-    saveCustomBirds(list) { api.set('ft_custom_birds', list); }
+    saveCustomBirds(list) { api.set('ft_custom_birds', list); },
+    chatRecords() { return api.get('ft_chat_records'); },
+    saveChatRecords(obj) { api.set('ft_chat_records', obj); } 
   };
   return api;
 })();
