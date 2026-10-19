@@ -1,6 +1,6 @@
 // 1. 初始化 Bmob
 const Bmob = window.Bmob;
-Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa9834a30");
+Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "25f0a6a93ff462d9");
 
 // 2. 封装给前台调用的 API（对外接口与之前完全保持一致）
 const DB = {
