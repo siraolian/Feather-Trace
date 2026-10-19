@@ -139,6 +139,36 @@
     <button class="btn primary" id="commentSendBtn" onclick="App.submitComment()">发送</button>
   </div>
 </div>
+
+<!-- ====== 弹层：上传新鸟种 ====== -->
+<div class="modal" id="modalUploadBird">
+  <div class="modal-inner">
+    <div class="modal-head">
+      <span>上传新鸟种</span>
+      <span class="close" data-close="modalUploadBird">✕</span>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center; margin-bottom:15px;">
+        <img id="uploadBirdImgPreview" src="" style="width:100%; max-height:200px; border-radius:12px; object-fit:cover; display:none; margin-bottom:10px;">
+        <label for="uploadBirdImgInput" class="btn ghost block" style="border:1px dashed var(--green); cursor:pointer;">📷 点击上传照片</label>
+        <input type="file" id="uploadBirdImgInput" accept="image/*" style="display:none;">
+      </div>
+      <input class="inp" id="uploadBirdName" placeholder="鸟类名称（如：红嘴蓝鹊）">
+      <input class="inp" id="uploadBirdLoc" placeholder="发现地点（如：沙湖公园）">
+      <textarea class="inp ta" id="uploadBirdDesc" placeholder="其他特征描述（选填）" style="min-height:70px;"></textarea>
+      <button class="btn primary block" onclick="App.submitUploadBird()">保存收录</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 弹层：回复评论 ====== -->
+<div class="comment-modal" id="replyModal">
+  <div class="comment-overlay" onclick="App.closeReplyModal()"></div>
+  <div class="comment-input-area">
+    <input type="text" id="replyInput" placeholder="回复评论..." autocomplete="off">
+    <button class="btn primary" onclick="App.submitReply()">发送</button>
+  </div>
+</div>
   
 <!-- 轻提示 -->
 <div id="toast"></div>
