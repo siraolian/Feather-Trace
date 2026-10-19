@@ -53,14 +53,18 @@ const DB = {
       return { success: false, msg: e.message || '登录失败' };
     }
   },
-
-  // 搜索用户（模糊搜索）
+  
+  // 搜索其他用户（支持模糊搜索）
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      query.equalTo("username", "==", new Bmob.RegExp({ regexp: keyword, options: 'i' }));
-      const results = await query.find();
+      // 👇 使用标准正则对象进行模糊搜索，兼容性最好
+      query.equalTo("username", {
+        "$regex": keyword,
+        "$options": "i" // i 代表忽略大小写
+      });
       
+      const results = await query.find();
       return results.map(item => ({
         username: item.get('username'),
         avatar: item.get('avatar') || '👤'
