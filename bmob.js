@@ -1,7 +1,7 @@
 // 1. 初始化 Bmob
 const Bmob = window.Bmob;
 // 注意：这里用的还是你刚才成功连上的那套配置
-Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa9834a30");
+Bmob.initialize("25f0a6a93ff462d9", "167349");
 
 // 2. 封装 API（改用普通的 Users 表，绕过官方认证系统）
 const DB = {
