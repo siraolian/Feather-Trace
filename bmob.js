@@ -1,24 +1,40 @@
-// （如果上面查重版失败，用这个极简版）
+// 1. 初始化 Bmob
 const Bmob = window.Bmob;
-Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa9834a30");
+// 注意：这里的 155ab... 是你之前发给我的 REST API Key
+Bmob.initialize("25f0a6a93ff462d9", "167349");
 
+// 2. 封装 API
 const DB = {
+  // 注册新用户
   async register(email, password, username) {
     try {
-      const newUser = Bmob.Object.extend("Users");
-      const user = new newUser();
-      user.set("username", username);
-      user.set("password", password);
-      user.set("email", email);
-      user.set("avatar", "👤");
+      // 第一步：查重
+      const checkQuery = Bmob.Query('Users');
+      checkQuery.equalTo("username", username); 
+      const checkRes = await checkQuery.find();
       
-      const res = await user.save();
-      return { success: true, user: { id: res.id, username: username } };
+      if (checkRes.length > 0) {
+        return { success: false, msg: '该用户名已被注册啦' };
+      }
+
+      // 第二步：写入数据（新版强制使用 Bmob.Query 的 save 方法）
+      const newQuery = Bmob.Query('Users');
+      newQuery.set("username", username);
+      newQuery.set("password", password);
+      newQuery.set("email", email);
+      newQuery.set("avatar", "👤");
+      
+      const res = await newQuery.save();
+      
+      // 返回成功
+      return { success: true, user: { id: res.objectId, username: username } };
     } catch (e) {
       console.error("注册报错详情:", e);
       return { success: false, msg: e.message || '注册失败' };
     }
   },
+
+  // 登录
   async login(email, password) {
     try {
       const query = Bmob.Query('Users');
@@ -36,9 +52,11 @@ const DB = {
     }
   },
 
+  // 搜索其他用户
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
+      // 模糊搜索
       query.equalTo("username", new Bmob.RegExp({ regexp: keyword, options: 'i' }));
       
       const results = await query.find();
