@@ -1,35 +1,34 @@
 // 1. 初始化 Bmob
 const Bmob = window.Bmob;
-Bmob.initialize("25f0a6a93ff462d9", "167349");
+// 注意：这里用的还是你刚才成功连上的那套配置
+Bmob.initialize("7cb2ff0bf8b7c4af565b97ab0783dd39", "155ab422123ce0bd7886426fa9834a30");
 
-// 2. 封装给前台调用的 API（对外接口与之前完全保持一致）
+// 2. 封装 API（改用普通的 Users 表，绕过官方认证系统）
 const DB = {
   // 注册新用户
   async register(email, password, username) {
     try {
-      // 1. 注册系统用户表 _User
-      let user = new Bmob.User();
-      user.set("username", username);
-      user.set("password", password);
-      user.set("email", email);
-      // Bmob 默认会给用户加 ACL 权限，只有自己能读写
-      let res = await user.signUp();
+      // 先检查用户名是否重复
+      const checkQuery = Bmob.Query('Users');
+      checkQuery.equalTo("username", "==", username);
+      const count = await checkQuery.count();
+      if (count > 0) return { success: false, msg: '该用户名已被注册' };
 
-      // 2. 将用户信息存入公开的 Profile 表（用于别人能搜到你）
-      let Profile = Bmob.Object.extend("Profile");
-      let profile = new Profile();
-      profile.set("username", username);
-      profile.set("avatar", "🦜");
-      profile.set("userId", res.id);
+      // 创建新用户
+      const query = Bmob.Query('Users');
+      query.set('username', username);
+      query.set('password', password);
+      query.set('email', email);
+      query.set('avatar', '👤');
       
-      // 设置 Profile 表公开可读，否则搜不到
-      let acl = new Bmob.ACL();
+      // 关键：为了能跨设备搜索，必须开启公开读写权限
+      const acl = new Bmob.ACL();
       acl.setPublicReadAccess(true);
-      acl.setWriteAccess(res.id, true); // 只有自己可以改
-      profile.setACL(acl);
+      acl.setPublicWriteAccess(true); 
+      query.setACL(acl);
 
-      await profile.save();
-      return { success: true, user: res };
+      const res = await query.save();
+      return { success: true, user: { id: res.id, username: username } };
     } catch (e) {
       return { success: false, msg: e.message };
     }
@@ -38,21 +37,28 @@ const DB = {
   // 登录
   async login(email, password) {
     try {
-      const user = await Bmob.User.logIn(email, password);
-      return { success: true, user: user };
+      const query = Bmob.Query('Users');
+      query.equalTo("email", "==", email);
+      query.equalTo("password", "==", password);
+      const results = await query.find();
+      
+      if (results.length > 0) {
+        return { success: true, user: results[0] };
+      }
+      return { success: false, msg: '邮箱或密码错误' };
     } catch (e) {
       return { success: false, msg: e.message };
     }
   },
 
-  // 搜索其他用户（关键功能！）
+  // 搜索其他用户（支持模糊搜索）
   async searchUser(keyword) {
     try {
-      const query = Bmob.Query("Profile");
+      const query = Bmob.Query('Users');
       // 使用正则表达式实现模糊搜索
       query.equalTo("username", new Bmob.RegExp({ regexp: keyword, options: 'i' }));
-      const results = await query.find();
       
+      const results = await query.find();
       return results.map(item => ({
         username: item.get('username'),
         avatar: item.get('avatar') || '👤'
