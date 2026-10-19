@@ -2,6 +2,8 @@
  * Feather Trace —— 主逻辑
  * ============================================================ */
 
+  let currentPostId = '';
+
 // 图标映射表
 const ICON_MAP = {
   '🐦': '<i class="ri-bird-line"></i>',
@@ -62,7 +64,7 @@ const App = (() => {
     
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
@@ -82,7 +84,7 @@ const App = (() => {
     // 控制顶栏和底栏显示隐藏
     const topTabs = document.querySelector('.top-tabs-wrapper');
     const bottomNav = document.querySelector('.bottom-nav');
-    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list'].includes(p)) {
+    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail'].includes(p)) {
       if (topTabs) topTabs.classList.add('hidden');
       if (bottomNav) bottomNav.style.display = 'none';
     } else {
@@ -115,6 +117,7 @@ const App = (() => {
     else if (current === 'history') renderHistory();
     else if (current === 'favorites') renderFavorites();
     else if (current === 'follow-list') renderFollowList();
+    else if (current === 'post-detail') renderPostDetail();
   }
 
   /* ================= 交流区 ================= */
@@ -135,18 +138,19 @@ const App = (() => {
     bindPostEvents(el);
   }
 
-  function postListHtml() {
+   function postListHtml() {
     const posts = Store.posts();
     let list;
     if (commTab === 'follow') list = [...posts].sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.likes - a.likes);
     else list = posts.filter(p => p.type === commTab);
     if (!list.length) return `<div class="empty"><div class="e">🪶</div>还没有帖子，点击右下角＋发布第一帖吧！</div>`;
-    const liked = Store.liked(), fished = Store.fished();
+    const liked = Store.liked(), fished = Store.fished(), saved = Store.savedPosts() || [];
     
     return list.map(p => `
-      <div class="post-card">
+      <!-- 👇 加了 onclick 跳转详情 -->
+      <div class="post-card" onclick="App.openPostDetail('${p.id}')" style="cursor:pointer;">
         <div class="post-head">
-          <span class="avatar" style="cursor:pointer;" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">
+          <span class="avatar" onclick="event.stopPropagation(); App.viewUserProfile('${escapeHtml(p.author)}')">
             ${p.avatar && p.avatar.startsWith('data:image') ? `<img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : p.avatar}
           </span>
           <div><div class="post-author">${escapeHtml(p.author)}</div><div class="post-time">${p.time}</div></div>
@@ -155,11 +159,15 @@ const App = (() => {
         <div class="post-title">${escapeHtml(p.title)}${p.hot ? '<span class="hot-badge">🔥热门</span>' : ''}</div>
         <div class="post-content">${escapeHtml(p.content)}</div>
         ${p.image ? `<img class="post-img" src="${p.image}" alt="帖子图片">` : ''}
+        
         <div class="post-actions">
-          <span class="pa ${liked.includes(p.id) ? 'on' : ''}" data-ft="like" data-id="${p.id}">👍 <b>${p.likes}</b></span>
-          <span class="pa" data-ft="comment" data-id="${p.id}">💬 <b>${p.comments}</b></span>
-          <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" data-ft="fish" data-id="${p.id}">🐟 <b>${p.fish}</b></span>
-          <span class="pa" data-ft="share-post" data-id="${p.id}" style="margin-left:auto">↗ 分享</span>
+          <span class="pa ${liked.includes(p.id) ? 'on' : ''}" onclick="event.stopPropagation(); App.toggleLike('${p.id}', this)">👍 <b>${p.likes}</b></span>
+          <span class="pa">💬 <b>${p.comments}</b></span>
+          <span class="pa ${fished.includes(p.id) ? 'fish-on' : ''}" onclick="event.stopPropagation(); App.toggleFish('${p.id}', this)">🐟 <b>${p.fish}</b></span>
+          <!-- 👇 新增收藏按钮 -->
+          <span class="pa ${saved.includes(p.id) ? 'on' : ''}" onclick="event.stopPropagation(); App.toggleSave('${p.id}', this)" style="margin-left:auto;">
+            ${saved.includes(p.id) ? '⭐' : '☆'} 收藏
+          </span>
         </div>
       </div>`).join('');
   }
@@ -1076,26 +1084,26 @@ const App = (() => {
   /* ================= 新增：我的收藏 ================= */
   function renderFavorites() {
     const el = document.getElementById('page-favorites');
+    const savedIds = Store.savedPosts() || [];
+    const allPosts = Store.posts();
+    const savedPosts = allPosts.filter(p => savedIds.includes(p.id));
     
     let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
       <div class="section-title" style="margin-top:0;">⭐ 收藏的帖子</div>
-      <div class="spot-list">
-        <div class="spot-item">
-          <div class="spot-name">📝 武汉秋冬观鸟点位攻略（干货）</div>
-          <div class="spot-meta"><span>鸟导阿强</span><span>👍 412</span></div>
-        </div>
-        <div class="spot-item">
-          <div class="spot-name">📝 到底哪种摄像机比较适合新手？</div>
-          <div class="spot-meta"><span>镜头里的风</span><span>👍 289</span></div>
-        </div>
-      </div>
+      <div class="spot-list">`;
       
-      <div class="section-title" style="margin-top:20px;">⭐ 收藏的鸟种</div>
-      <div class="ai-cards" style="padding: 0 15px;">
-        <div class="ai-card"><div class="t">普通翠鸟</div><div class="d">水鸟 · 较常见</div></div>
-        <div class="ai-card"><div class="t">戴胜</div><div class="d">林鸟 · 少见</div></div>
-      </div>
-    </div>`;
+    if (savedPosts.length > 0) {
+      savedPosts.forEach(p => {
+        html += `<div class="spot-item" onclick="App.openPostDetail('${p.id}')" style="cursor:pointer;">
+          <div class="spot-name">📝 ${escapeHtml(p.title)}</div>
+          <div class="spot-meta"><span>${p.author}</span><span>👍 ${p.likes}</span></div>
+        </div>`;
+      });
+    } else {
+      html += `<div class="empty"><div class="e">⭐</div>还没有收藏任何帖子</div>`;
+    }
+      
+    html += `</div></div>`;
     el.innerHTML = replaceIcons(html);
   }
 
@@ -1122,10 +1130,123 @@ const App = (() => {
     html += `</div></div>`;
     el.innerHTML = replaceIcons(html);
   }
+
+  /* ================= 帖子交互与详情 ================= */
+  function toggleLike(id, el) {
+    const posts = Store.posts(), liked = Store.liked();
+    const p = posts.find(x => x.id === id); if (!p) return;
+    if (liked.includes(id)) {
+      p.likes--; Store.saveLiked(liked.filter(x => x !== id));
+      if (el) { el.classList.remove('on'); el.innerHTML = `👍 <b>${p.likes}</b>`; }
+    } else {
+      p.likes++; liked.push(id); Store.saveLiked(liked);
+      if (el) { el.classList.add('on'); el.innerHTML = `👍 <b>${p.likes}</b>`; }
+      if (Store.myPosts().includes(id)) addLikesReceived(1);
+    }
+    Store.savePosts(posts);
+    if (current === 'post-detail') renderPostDetail();
+  }
+
+  function toggleFish(id, el) {
+    const posts = Store.posts(), fished = Store.fished();
+    const p = posts.find(x => x.id === id); if (!p) return;
+    if (fished.includes(id)) { toast('你已经打赏过这个帖子啦'); return; }
+    const u = Store.user();
+    if (u.fish < 1) { openVip(); return; }
+    u.fish--; p.fish++; Store.saveUser(u); fished.push(id); Store.saveFished(fished);
+    Store.savePosts(posts);
+    toast(`打赏成功 🐟 小鱼干×1`);
+    if (el) { el.classList.add('fish-on'); el.innerHTML = `🐟 <b>${p.fish}</b>`; }
+    if (current === 'post-detail') renderPostDetail();
+  }
+
+  function toggleSave(id, el) {
+    const saved = Store.savedPosts() || [];
+    const isSaved = saved.includes(id);
+    if (isSaved) {
+      Store.savePostsSaved(saved.filter(x => x !== id));
+      toast('已取消收藏');
+      if (el) { el.classList.remove('on'); el.innerHTML = '☆ 收藏'; }
+    } else {
+      saved.push(id); Store.savePostsSaved(saved);
+      toast('⭐ 收藏成功');
+      if (el) { el.classList.add('on'); el.innerHTML = '⭐ 已收藏'; }
+    }
+    if (current === 'favorites') renderFavorites();
+  }
+
+  function openPostDetail(id) {
+    currentPostId = id;
+    switchPage('post-detail');
+  }
+
+  function renderPostDetail() {
+    const el = document.getElementById('page-post-detail');
+    const p = Store.posts().find(x => x.id === currentPostId);
+    if (!p) { switchPage('comm'); return; }
+    
+    const liked = Store.liked().includes(p.id);
+    const fished = Store.fished().includes(p.id);
+    const saved = Store.savedPosts()?.includes(p.id) || false;
+
+    // 模拟几条评论数据（随机生成）
+    const mockComments = [
+      { user: '镜头里的风', avatar: '📷', text: '太美了！下次带我一个！' },
+      { user: '鸟导阿强', avatar: '🪶', text: '这个机位绝佳，光线很好。' },
+      { user: '东湖漫游者', avatar: '🌿', text: '楼主用的什么设备拍的？求参数~' }
+    ];
+
+    let html = `
+      <div class="detail-header">
+        <span class="back" onclick="App.switchPage('comm')">✕</span>
+        <span class="title">帖子详情</span>
+        <span style="width: 20px;"></span>
+      </div>
+      
+      <div class="detail-body">
+        <div class="detail-author">
+          <span class="avatar" onclick="App.viewUserProfile('${escapeHtml(p.author)}')">${p.avatar}</span>
+          <div class="info">
+            <div class="name">${escapeHtml(p.author)} <span style="font-size:10px; background:#FFD54F; padding:1px 4px; border-radius:4px;">Lv.6</span></div>
+            <div class="time">${p.time} · 来自武汉</div>
+          </div>
+          <button class="btn-follow">+ 关注</button>
+        </div>
+        
+        <div class="detail-title">${escapeHtml(p.title)}</div>
+        <div class="detail-content">${escapeHtml(p.content)}</div>
+        ${p.image ? `<img class="detail-img" src="${p.image}">` : ''}
+        <div style="font-size:12px; color:#aaa; text-align:right;">发布于 ${p.time}</div>
+      </div>
+      
+      <div class="detail-actions">
+        <span class="pa ${liked ? 'on' : ''}" onclick="App.toggleLike('${p.id}', this)">👍 <b>${p.likes}</b> 点赞</span>
+        <span class="pa">💬 <b>${p.comments}</b> 评论</span>
+        <span class="pa ${fished ? 'fish-on' : ''}" onclick="App.toggleFish('${p.id}', this)">🐟 <b>${p.fish}</b> 打赏</span>
+        <span class="pa ${saved ? 'on' : ''}" onclick="App.toggleSave('${p.id}', this)">${saved ? '⭐ 已收藏' : '☆ 收藏'}</span>
+      </div>
+
+      <div class="comment-section">
+        <div class="comment-title">全部评论 (${p.comments})</div>
+        ${mockComments.map(c => `
+          <div class="comment-item">
+            <div class="comment-avatar">${c.avatar}</div>
+            <div class="comment-content">
+              <div class="comment-user">${c.user}</div>
+              <div class="comment-text">${c.text}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    
+    el.innerHTML = html;
+  }
   
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
-    birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap 
+    birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
+    openPostDetail, toggleLike, toggleFish, toggleSave 
   };
 })();
 
