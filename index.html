@@ -170,6 +170,27 @@
     <button class="btn primary" onclick="App.submitReply()">发送</button>
   </div>
 </div>
+
+<!-- ====== 弹层：登录/注册 ====== -->
+<div class="modal" id="modalAuth">
+  <div class="modal-inner">
+    <div class="modal-head">
+      <span id="authTitle">登录 / 注册</span>
+      <span class="close" data-close="modalAuth">✕</span>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <input class="inp" id="authUsername" placeholder="用户名（如：鸟友C）" style="display:none;">
+      <input class="inp" id="authEmail" placeholder="邮箱（如：test@qq.com）">
+      <input class="inp" id="authPassword" type="password" placeholder="密码（如：123456）">
+      
+      <button class="btn primary block mt12" id="authSubmitBtn" onclick="App.handleAuth()">登录</button>
+      
+      <div style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--text2);">
+        <span id="authSwitchText">没有账号？去注册</span>
+      </div>
+    </div>
+  </div>
+</div>
   
 <!-- 轻提示 -->
 <div id="toast"></div>
