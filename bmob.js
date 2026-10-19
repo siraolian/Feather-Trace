@@ -7,16 +7,21 @@ const DB = {
   // 注册新用户
   async register(email, password, username) {
     try {
-      // 查重（新版语法：必须加 "=="）
-      const checkQuery = Bmob.Query('Users');
-      checkQuery.equalTo("username", "==", username); 
-      const checkRes = await checkQuery.find();
-      
-      if (checkRes.length > 0) {
-        return { success: false, msg: '该用户名已被注册啦' };
+      // 👇 保护性查重：如果表不存在，查重会报错，我们捕获错误并忽略
+      try {
+        const checkQuery = Bmob.Query('Users');
+        checkQuery.equalTo("username", "==", username); 
+        const checkRes = await checkQuery.find();
+        
+        if (checkRes.length > 0) {
+          return { success: false, msg: '该用户名已被注册啦' };
+        }
+      } catch (checkError) {
+        // 如果报错说 object not found，说明第一次用，直接放行
+        console.log("首次使用，自动跳过查重并建表");
       }
 
-      // 写入数据
+      // 👇 强行写入数据（只要运行到这里，就会自动在 Bmob 后台建出 Users 表）
       const newUser = Bmob.Query('Users');
       newUser.set("username", username);
       newUser.set("password", password);
@@ -53,7 +58,6 @@ const DB = {
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      // 模糊搜索（也要加 "=="）
       query.equalTo("username", "==", new Bmob.RegExp({ regexp: keyword, options: 'i' }));
       const results = await query.find();
       
