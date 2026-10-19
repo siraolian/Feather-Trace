@@ -45,7 +45,7 @@ const DB = {
       const results = await query.find();
       
       if (results.length > 0) {
-        return { success: true, user: results[0] };
+        return { success: true, user: { id: res.objectId || res.id, username: username } };
       }
       return { success: false, msg: '邮箱或密码错误' };
     } catch (e) {
