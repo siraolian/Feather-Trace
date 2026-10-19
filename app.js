@@ -473,6 +473,30 @@ const App = (() => {
     setTimeout(() => { MapView.openSpot(spotId); }, 300);
   }
 
+  // 切换关注状态
+  function toggleFollow(targetName, btnEl, isDetailPage = false) {
+    let following = Store.following() || [];
+    const isFollowing = following.includes(targetName);
+
+    if (isFollowing) {
+      // 取关
+      following = following.filter(name => name !== targetName);
+      toast('已取消关注');
+      if (btnEl) { btnEl.textContent = '+ 关注'; btnEl.style.color = 'var(--green)'; btnEl.style.background = 'transparent'; }
+    } else {
+      // 关注
+      following.push(targetName);
+      toast('⭐ 关注成功');
+      if (btnEl) { btnEl.textContent = '已关注'; btnEl.style.color = '#888'; btnEl.style.background = '#f5f5f5'; btnEl.style.borderColor = '#eee'; }
+    }
+    Store.saveFollowing(following);
+
+    // 如果当前在关注列表，刷新列表
+    if (current === 'follow-list') renderFollowList();
+    // 如果当前在粉丝列表，刷新列表（因为可能有“互相关注”状态变化）
+    if (current === 'fans-list') renderFansList();
+  }
+  
   /* ================= 用户资料 ================= */
   function viewUserProfile(authorName) {
     if (authorName === Store.user().name) { switchPage('mine'); return; }
@@ -687,9 +711,8 @@ const App = (() => {
     const myPosts = Store.posts().filter(p => posts.includes(p.id));
     const ach = achieveState().filter(a => a.done);
     
-    // 模拟关注和粉丝数
-    const followingCount = 11;
-    const followersCount = 1;
+    const followingCount = (Store.following() || []).length;
+    const followersCount = (Store.followers() || []).length;
 
     let html = `
       <div class="mine-head" style="padding-bottom: 30px;">
@@ -1117,30 +1140,76 @@ const App = (() => {
     el.innerHTML = replaceIcons(html);
   }
 
-  /* ================= 新增：关注列表 ================= */
+   /* ================= 关注列表 ================= */
   function renderFollowList() {
     const el = document.getElementById('page-follow-list');
-    const users = RANK_SEED.slice(0, 4);
+    const followingNames = Store.following() || [];
+    
+    // 从种子库里匹配用户信息
+    const users = RANK_SEED.filter(u => followingNames.includes(u.name));
     
     let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-      <div class="section-title" style="margin-top:0;">我的关注</div>
+      <div class="section-title" style="margin-top:0;">我的关注 (${users.length})</div>
       <div class="spot-list">`;
       
-    users.forEach(u => {
-      html += `<div class="spot-item" onclick="App.viewUserProfile('${u.name}')" style="display:flex; align-items:center; gap:15px;">
-        <div style="width:46px; height:46px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:24px;">${u.icon}</div>
-        <div style="flex:1;">
-          <div style="font-weight:600; font-size:15px;">${u.name}</div>
-          <div style="font-size:12px; color:#888; margin-top:2px;">🐦 ${u.birds} 种 · 👍 ${u.likes}</div>
-        </div>
-        <button class="btn ghost" style="padding:4px 12px; font-size:12px; border-radius:20px;">已关注</button>
-      </div>`;
-    });
+    if (users.length === 0) {
+      html += `<div class="empty"><div class="e">👤</div>还没有关注任何人</div>`;
+    } else {
+      users.forEach(u => {
+        html += `<div class="spot-item" onclick="App.viewUserProfile('${u.name}')" style="display:flex; align-items:center; gap:15px;">
+          <div style="width:46px; height:46px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:24px;">${u.icon}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:15px;">${u.name}</div>
+            <div style="font-size:12px; color:#888; margin-top:2px;">🐦 ${u.birds} 种 · 👍 ${u.likes}</div>
+          </div>
+          <!-- 已关注按钮，点击变为取关 -->
+          <button class="btn ghost" onclick="event.stopPropagation(); App.toggleFollow('${u.name}', this)" style="padding:4px 12px; font-size:12px; border-radius:20px;">已关注</button>
+        </div>`;
+      });
+    }
     
     html += `</div></div>`;
     el.innerHTML = replaceIcons(html);
   }
 
+   /* ================= 粉丝列表 ================= */
+  function renderFansList() {
+    const el = document.getElementById('page-fans-list');
+    const followerNames = Store.followers() || [];
+    const followingNames = Store.following() || [];
+    
+    const users = RANK_SEED.filter(u => followerNames.includes(u.name));
+    
+    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+      <div class="section-title" style="margin-top:0;">我的粉丝 (${users.length})</div>
+      <div class="spot-list">`;
+      
+    if (users.length === 0) {
+      html += `<div class="empty"><div class="e">👤</div>还没有粉丝</div>`;
+    } else {
+      users.forEach(u => {
+        const isMutual = followingNames.includes(u.name); // 是否互相关注
+        
+        html += `<div class="spot-item" onclick="App.viewUserProfile('${u.name}')" style="display:flex; align-items:center; gap:15px;">
+          <div style="width:46px; height:46px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:24px;">${u.icon}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:15px;">${u.name}</div>
+            <div style="font-size:12px; color:#888; margin-top:2px;">🐦 ${u.birds} 种 · 👍 ${u.likes}</div>
+          </div>
+          <!-- 回关按钮：如果已经互关，显示已互关且不可点 -->
+          <button class="btn primary" 
+            onclick="event.stopPropagation(); if(!${isMutual}) App.toggleFollow('${u.name}', this)" 
+            style="padding:4px 12px; font-size:12px; border-radius:20px; ${isMutual ? 'background:#f5f5f5; color:#888;' : ''}">
+            ${isMutual ? '已互关' : '回关'}
+          </button>
+        </div>`;
+      });
+    }
+    
+    html += `</div></div>`;
+    el.innerHTML = replaceIcons(html);
+  }
+  
   /* ================= 帖子交互与详情 ================= */
   function toggleLike(id, el) {
     const posts = Store.posts(), liked = Store.liked();
@@ -1220,7 +1289,13 @@ const App = (() => {
             <div class="name">${escapeHtml(p.author)} <span style="font-size:10px; background:#FFD54F; padding:1px 4px; border-radius:4px;">Lv.6</span></div>
             <div class="time">${p.time} · 来自武汉</div>
           </div>
-          <button class="btn-follow">+ 关注</button>
+            ${(() => {
+            const isFollowed = (Store.following() || []).includes(p.author);
+            return `<button class="btn-follow" onclick="App.toggleFollow('${escapeHtml(p.author)}', this)" 
+              style="${isFollowed ? 'color:#888; background:#f5f5f5; border-color:#eee;' : ''}">
+              ${isFollowed ? '已关注' : '+ 关注'}
+            </button>`;
+          })()}
         </div>
         
         <div class="detail-title">${escapeHtml(p.title)}</div>
@@ -1264,7 +1339,7 @@ const App = (() => {
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
-    openPostDetail, toggleLike, toggleFish, toggleSave 
+    openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow
   };
 })();
 
