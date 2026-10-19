@@ -84,12 +84,19 @@ const App = (() => {
     // 控制顶栏和底栏显示隐藏
     const topTabs = document.querySelector('.top-tabs-wrapper');
     const bottomNav = document.querySelector('.bottom-nav');
-    if (['shop', 'msg', 'mine', 'my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail'].includes(p)) {
-      if (topTabs) topTabs.classList.add('hidden');
-      if (bottomNav) bottomNav.style.display = 'none';
-    } else {
-      if (topTabs) topTabs.classList.remove('hidden');
+    
+    // 👇 【修复】底栏：只要是主界面（首页、售卖、信息、我的），必须显示底栏！
+    if (['comm', 'map', 'ai', 'progress', 'shop', 'msg', 'mine'].includes(p)) {
       if (bottomNav) bottomNav.style.display = 'flex';
+    } else {
+      if (bottomNav) bottomNav.style.display = 'none';
+    }
+
+    // 👇 【修复】顶栏：只有在四大核心页（交流/地图/AI/进度）才显示顶栏
+    if (['comm', 'map', 'ai', 'progress'].includes(p)) {
+      if (topTabs) topTabs.classList.remove('hidden');
+    } else {
+      if (topTabs) topTabs.classList.add('hidden');
     }
     
     renderCurrent();
