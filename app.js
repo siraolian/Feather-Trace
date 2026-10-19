@@ -64,7 +64,7 @@ const App = (() => {
     
     let pageId = 'page-comm';
     if (TOP_TABS.includes(p)) pageId = 'page-' + p;
-    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail'].includes(p)) pageId = 'page-' + p;
+    else if (['my-birds', 'my-badges', 'offline', 'edit-profile', 'user-profile', 'create-post', 'search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail'].includes(p)) pageId = 'page-' + p;
     
     const targetEl = document.getElementById(pageId);
     if (targetEl) targetEl.classList.add('active');
@@ -89,7 +89,7 @@ const App = (() => {
     const bottomNav = document.querySelector('.bottom-nav');
     
     // 隐藏底栏（只在深层页面隐藏）
-    if (['search', 'settings', 'history', 'favorites', 'follow-list', 'post-detail', 'create-post', 'edit-profile'].includes(p)) {
+    if (['search', 'settings', 'history', 'favorites', 'follow-list', 'fans-list', 'post-detail', 'create-post', 'edit-profile'].includes(p)) {
       if (bottomNav) bottomNav.style.setProperty('display', 'none', 'important');
     } else {
       if (bottomNav) bottomNav.style.setProperty('display', 'flex', 'important');
@@ -127,6 +127,7 @@ const App = (() => {
     else if (current === 'history') renderHistory();
     else if (current === 'favorites') renderFavorites();
     else if (current === 'follow-list') renderFollowList();
+    else if (current === 'fans-list') renderFansList(); 
     else if (current === 'post-detail') renderPostDetail();
   }
 
@@ -726,12 +727,20 @@ const App = (() => {
           <div class="mine-name" style="font-size: 22px;">${escapeHtml(u.name)}</div>
           <div class="mine-code" style="margin-top: 8px; color: rgba(255,255,255,0.8);">ID: ${u.code}</div>
           
-          <div style="display: flex; gap: 15px; margin-top: 10px; color: #fff; font-size: 13px;">
-            <span onclick="App.switchPage('follow-list')" style="cursor: pointer;"><b style="font-size: 16px;">${followersCount}</b> 粉丝</span>
-            <span onclick="App.switchPage('follow-list')" style="cursor: pointer;"><b style="font-size: 16px;">${followingCount}</b> 关注</span>
-            <span><b style="font-size: 16px;">${u.likesReceived}</b> 获赞</span>
+                  <div style="display: flex; gap: 20px; margin-top: 10px; color: #fff; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation(); App.switchPage('fans-list')">
+              <b style="font-size: 16px; cursor: pointer;">${followersCount}</b> 
+              <span style="cursor: pointer; padding: 2px 5px;">粉丝</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation(); App.switchPage('follow-list')">
+              <b style="font-size: 16px; cursor: pointer;">${followingCount}</b> 
+              <span style="cursor: pointer; padding: 2px 5px;">关注</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <b style="font-size: 16px;">${u.likesReceived}</b> 
+              <span style="padding: 2px 5px;">获赞</span>
+            </div>
           </div>
-        </div>
       </div>
       
       <!-- 数据统计面板 -->
