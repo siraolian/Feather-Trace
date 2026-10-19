@@ -426,7 +426,7 @@ const App = (() => {
     }
   }
 
-  function executeSearch(kw, container) {
+  async function executeSearch(kw, container) {
     let html = '';
     const lowerKw = kw.toLowerCase();
 
