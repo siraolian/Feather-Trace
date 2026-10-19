@@ -1588,34 +1588,25 @@ const App = (() => {
     switchPage('chat-detail');
   }
 
-  function renderChatDetail() {
+    let chatPollingTimer = null; // 定时器，用来每隔2秒拉取数据
+
+  async function renderChatDetail() {
     const el = document.getElementById('page-chat-detail');
     if (!currentChatUser) { switchPage('msg'); return; }
 
-    // 读取本地聊天记录
-    let allRecords = Store.chatRecords() || {};
-    let msgs = allRecords[currentChatUser] || [
-      // 初始默认聊天记录
-      { isMe: false, text: '你好呀！看你最近在沙湖拍了不少好照片，能交流一下吗？' }
-    ];
+    // 清除之前的定时器，防止页面切换后还在后台偷偷请求
+    if (chatPollingTimer) clearInterval(chatPollingTimer);
 
-    // 生成气泡 HTML
-    let chatHtml = msgs.map(m => `
-      <div class="chat-msg ${m.isMe ? 'right' : 'left'}">
-        <div class="chat-avatar">${m.isMe ? Store.user().avatar : (RANK_SEED.find(u => u.name === currentChatUser)?.icon || '🐦')}</div>
-        <div class="chat-bubble">${escapeHtml(m.text)}</div>
-      </div>
-    `).join('');
+    const myName = Store.user().name; // 我自己的用户名
 
+    // 渲染 UI 骨架（先渲染出来，数据慢慢填）
     let html = `
       <div class="chat-header">
-        <span class="back" onclick="App.switchPage('msg')">‹</span>
+        <span class="back" onclick="App.switchPage('msg'); clearInterval(window.chatPollingTimer);">‹</span>
         <span class="title">${escapeHtml(currentChatUser)}</span>
         <span style="width:20px;"></span>
       </div>
-      <div class="chat-content" id="chatContent">
-        ${chatHtml}
-      </div>
+      <div class="chat-content" id="chatContent"></div>
       <div class="chat-bottom-input">
         <input type="text" id="chatMsgInput" placeholder="发消息..." autocomplete="off">
         <button id="chatSendBtn">发送</button>
@@ -1623,36 +1614,64 @@ const App = (() => {
     `;
     el.innerHTML = html;
 
-    // 滚动到底部
     const content = el.querySelector('#chatContent');
-    content.scrollTop = content.scrollHeight;
-
-    // 发送事件
     const input = el.querySelector('#chatMsgInput');
     const sendBtn = el.querySelector('#chatSendBtn');
-    
-    const sendMsg = () => {
+
+    // 核心功能：从云端拉取数据并渲染
+    const fetchMessages = async () => {
+      if (typeof DB === 'undefined') return;
+      
+      // 去 Bmob 拿我们俩的聊天记录
+      const msgs = await DB.getMsgs(myName, currentChatUser);
+      
+      if (msgs.length === 0) {
+        content.innerHTML = `<div style="text-align:center; color:#aaa; font-size:12px; margin-top:20px;">暂无聊天记录，打个招呼吧！</div>`;
+        return;
+      }
+
+      // 生成气泡
+      content.innerHTML = msgs.map(m => {
+        const isMe = m.sender === myName;
+        return `
+          <div class="chat-msg ${isMe ? 'right' : 'left'}">
+            <div class="chat-avatar">${isMe ? Store.user().avatar : '👤'}</div>
+            <div class="chat-bubble">${escapeHtml(m.text)}</div>
+          </div>
+        `;
+      }).join('');
+
+      // 每次更新内容后，自动滚动到底部
+      content.scrollTop = content.scrollHeight;
+    };
+
+    // 页面一进来就拉取一次
+    fetchMessages();
+
+    // 👇 开启轮询：每隔 2 秒去云端问一句“有新消息没？”
+    // 挂载到 window 上方便离开时清除
+    window.chatPollingTimer = setInterval(fetchMessages, 2000);
+
+    // 发送消息事件
+    const sendMsg = async () => {
       const text = input.value.trim();
       if (!text) return;
       
-      // 保存我的消息
-      msgs.push({ isMe: true, text });
-      allRecords[currentChatUser] = msgs;
-      Store.saveChatRecords(allRecords);
+      input.value = ''; // 清空输入框
       
-      // 立刻渲染
-      input.value = '';
-      renderChatDetail();
-      
-      // 模拟对方回复
-      setTimeout(() => {
-        const replies = ['测试版，对面不是真人'];
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
-        msgs.push({ isMe: false, text: randomReply });
-        allRecords[currentChatUser] = msgs;
-        Store.saveChatRecords(allRecords);
-        renderChatDetail();
-      }, 1000);
+      // 先本地上屏（为了速度）
+      content.innerHTML += `
+        <div class="chat-msg right">
+          <div class="chat-avatar">${Store.user().avatar}</div>
+          <div class="chat-bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+      content.scrollTop = content.scrollHeight;
+
+      // 发送到 Bmob
+      await DB.sendMsg(myName, currentChatUser, text);
+      // 发完之后立刻拉取一次，同步状态
+      fetchMessages();
     };
 
     sendBtn.addEventListener('click', sendMsg);
