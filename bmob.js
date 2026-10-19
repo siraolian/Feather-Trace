@@ -54,15 +54,12 @@ const DB = {
     }
   },
   
-  // 搜索其他用户（支持模糊搜索）
+   // 搜索其他用户（模糊搜索）
   async searchUser(keyword) {
     try {
       const query = Bmob.Query('Users');
-      // 👇 使用标准正则对象进行模糊搜索，兼容性最好
-      query.equalTo("username", {
-        "$regex": keyword,
-        "$options": "i" // i 代表忽略大小写
-      });
+      // 👇 使用 Bmob 官方提供的 contains 方法，专门用来做模糊匹配
+      query.contains('username', keyword); 
       
       const results = await query.find();
       return results.map(item => ({
