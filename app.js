@@ -430,8 +430,23 @@ const App = (() => {
     let html = '';
     const lowerKw = kw.toLowerCase();
 
-    // 1. 搜用户
-    const users = RANK_SEED.filter(u => u.name.toLowerCase().includes(lowerKw));
+    // 搜用户（本地 + 云端）
+    let users = RANK_SEED.filter(u => u.name.toLowerCase().includes(lowerKw));
+    
+    // 调用云端搜索！真正去数据库里捞你另一个手机注册的号
+    try {
+      if (typeof DB !== 'undefined') {
+        const cloudUsers = await DB.searchUser(kw);
+        // 把云端搜出来的用户，合并到本地结果里
+        cloudUsers.forEach(cu => {
+          if (!users.find(u => u.name === cu.username)) {
+            users.push({ name: cu.username, icon: '👤', birds: 0, likes: 0, isCloud: true });
+          }
+        });
+      }
+    } catch (e) {
+      console.log("云端搜索失败", e);
+    }
     if (users.length) {
       html += `<div class="search-block"><div class="search-block-title">👤 相关用户</div>`;
       html += users.map(u => `
