@@ -595,7 +595,8 @@ const App = (() => {
   }
   function achieveState() {
     const u = Store.user();
-    const birds = Store.birds().length, likes = u.likesReceived, posts = Store.myPosts().length;
+    const birds = (Store.birds() || []).length + (Store.customBirds() || []).length; 
+    const likes = u.likesReceived, posts = Store.myPosts().length;
     return ACHIEVEMENTS.map(a => {
       let cur = 0;
       if (a.id === 'a1') cur = birds; if (a.id === 'a2') cur = birds; if (a.id === 'a3') cur = birds; if (a.id === 'a4') cur = birds;
@@ -742,7 +743,11 @@ const App = (() => {
   /* ================= 我的 ================= */
   function renderMine(el) {
     const u = Store.user();
-    const birds = Store.birds(), posts = Store.myPosts();
+    const sysBirdsCount = (Store.birds() || []).length;
+    const customBirdsCount = (Store.customBirds() || []).length;
+    const totalBirds = sysBirdsCount + customBirdsCount;
+    
+    const posts = Store.myPosts();
     const myPosts = Store.posts().filter(p => posts.includes(p.id));
     const ach = achieveState().filter(a => a.done);
     
@@ -781,7 +786,7 @@ const App = (() => {
       
       <!-- 数据统计面板 -->
       <div class="mine-stats" style="margin-top: -20px; position: relative; z-index: 10; border-radius: 16px; background: #fff;">
-        <div class="ms" onclick="App.switchPage('my-birds')" style="cursor:pointer;"><b>${birds.length}</b><span>收录鸟种</span></div>
+        <div class="ms" onclick="App.switchPage('my-birds')" style="cursor:pointer;"><b>${totalBirds}</b><span>收录鸟种</span></div>
         <div class="ms"><b>${myPosts.length}</b><span>发布帖子</span></div>
         <div class="ms" onclick="App.switchPage('my-badges')" style="cursor:pointer;"><b>${ach.length}</b><span>获得徽章</span></div>
         <div class="ms"><b>Lv.${u.level}</b><span>当前等级</span></div>
@@ -849,7 +854,9 @@ const App = (() => {
     const birds = Store.birds().map(birdById).filter(Boolean);
     const customBirds = Store.customBirds() || []; // 读取自定义鸟种
     
+    const totalBirds = (Store.birds() || []).length + customBirds.length;
     let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+    <div class="section-title" style="margin-top:0;">已收录鸟种 (${totalBirds}种)</div>
     <button class="btn primary block" style="margin-bottom:15px;" onclick="App.openUploadBirdModal()">+ 上传新鸟种记录</button>`;
 
     if (birds.length || customBirds.length) {
@@ -1496,9 +1503,13 @@ const App = (() => {
       image: uploadBirdImgData,
       time: '刚刚'
     });
-    Store.saveCustomBirds(customBirds);
+        Store.saveCustomBirds(customBirds);
     closeModal('modalUploadBird');
-    toast('收录成功！');
+    
+    addExp(10); // 👈 上传鸟种奖励 10 经验（可选，但能增加成就感）
+    const totalBirds = (Store.birds() || []).length + customBirds.length;
+    toast(`收录成功！+10经验（共${totalBirds}种）`);
+    
     renderMyBirds(); // 刷新列表
   }
 
