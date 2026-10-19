@@ -1306,11 +1306,14 @@ const App = (() => {
     const saved = Store.savedPosts()?.includes(p.id) || false;
 
     // 模拟几条评论数据（随机生成）
-    const mockComments = [
+    // 合并模拟评论和用户真实发出的评论
+    let mockComments = [
       { user: '镜头里的风', avatar: '📷', text: '太美了！下次带我一个！' },
-      { user: '鸟导阿强', avatar: '🪶', text: '这个机位绝佳，光线很好。' },
-      { user: '东湖漫游者', avatar: '🌿', text: '楼主用的什么设备拍的？求参数~' }
+      { user: '鸟导阿强', avatar: '🪶', text: '这个机位绝佳，光线很好。' }
     ];
+    if (p.realComments && p.realComments.length > 0) {
+      mockComments = [...p.realComments, ...mockComments]; // 真实评论放前面
+    }
 
     let html = `
       <div class="detail-header">
@@ -1345,7 +1348,7 @@ const App = (() => {
         <span class="pa ${liked ? 'on' : ''}" onclick="App.toggleLike('${p.id}', this)">
           <div class="pa-icon">👍</div><div class="pa-num">${p.likes}</div><div class="pa-text">点赞</div>
         </span>
-        <span class="pa">
+        <span class="pa" onclick="App.openCommentModal()" style="cursor:pointer;">
           <div class="pa-icon">💬</div><div class="pa-num">${p.comments}</div><div class="pa-text">评论</div>
         </span>
         <span class="pa ${fished ? 'fish-on' : ''}" onclick="App.toggleFish('${p.id}', this)">
@@ -1372,11 +1375,57 @@ const App = (() => {
     
     el.innerHTML = html;
   }
+
+  /* ================= 评论系统 ================= */
+  function openCommentModal() {
+    const modal = document.getElementById('commentModal');
+    const input = document.getElementById('commentInput');
+    input.value = '';
+    modal.classList.add('show');
+    // 聚焦输入框（延迟一点避免动画卡顿）
+    setTimeout(() => input.focus(), 300);
+  }
+
+  function closeCommentModal() {
+    const modal = document.getElementById('commentModal');
+    modal.classList.remove('show');
+    // 收起键盘
+    document.getElementById('commentInput').blur();
+  }
+
+  function submitComment() {
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    if (!text) { toast('评论不能为空'); return; }
+    
+    const posts = Store.posts();
+    const p = posts.find(x => x.id === currentPostId);
+    if (!p) return;
+
+    // 1. 增加评论数
+    p.comments = (p.comments || 0) + 1;
+    
+    // 2. 把评论存入该帖子的数据中
+    if (!p.realComments) p.realComments = [];
+    const u = Store.user();
+    p.realComments.unshift({
+      user: u.name,
+      avatar: u.avatar,
+      text: text
+    });
+
+    // 3. 保存数据并刷新页面
+    Store.savePosts(posts);
+    toast('评论发布成功');
+    closeCommentModal();
+    renderPostDetail(); // 刷新详情页
+  }
   
   return { 
     init, switchPage, renderCurrent, toast, collectBird, openBird, openVip, 
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
-    openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow
+    openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow,
+    openCommentModal, closeCommentModal, submitComment
   };
 })();
 
