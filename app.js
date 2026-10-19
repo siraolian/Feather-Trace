@@ -807,41 +807,67 @@ const App = (() => {
     el.innerHTML = replaceIcons(html);
   }
 
-  function renderEditProfile() {
+    function renderEditProfile() {
     const el = document.getElementById('page-edit-profile');
     const u = Store.user();
     const isImgAvatar = u.avatar && (u.avatar.startsWith('data:image') || u.avatar.startsWith('http'));
 
-    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
-      <div class="card"><div class="card-title">编辑资料</div>
-      <div style="display:flex; justify-content:center; margin-bottom:15px;">
-        <div style="width:80px; height:80px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; overflow:hidden; cursor:pointer;" onclick="document.getElementById('avatarUpload').click()">
-         ${isImgAvatar 
-  ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` 
-  : `<span style="font-size:40px;">${(u.avatar && !u.avatar.includes('<')) ? u.avatar : '🐦'}</span>`
-}
-        <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
-      </div>
-      <div style="text-align:center; font-size:12px; color:#888; margin-bottom:15px;">点击头像拍照或上传照片</div>
-      <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称">
-      <div class="section-title" style="margin:6px 0">或者选择 Emoji 头像</div>
-      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-        ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `<span class="avatar" style="cursor:pointer;${u.avatar === a ? 'border:3px solid var(--green)' : ''}" data-ft="avatar" data-v="${a}">${a}</span>`).join('')}
-      </div>
-      <button class="btn primary block" id="saveProfile">保存资料</button></div></div>`;
-        el.innerHTML = html; 
+    // 👇 注意：这里去掉了多复杂的嵌套，保证块级元素垂直排列
+    let html = `
+      <div class="page-sub">
+        <div class="page-back-btn" onclick="App.switchPage('mine')">← 返回我的</div>
+        
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 20px;">编辑资料</div>
+          
+          <!-- 头像展示区（居中） -->
+          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--green-light); display: flex; justify-content: center; align-items: center; overflow: hidden; cursor: pointer;" onclick="document.getElementById('avatarUpload').click()">
+              ${isImgAvatar 
+                ? `<img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;">` 
+                : `<span style="font-size:40px;">${u.avatar}</span>`
+              }
+            </div>
+            <div style="font-size: 12px; color: #888; margin-top: 10px;">点击头像拍照或上传照片</div>
+            <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="App.handleAvatarUpload(this)">
+          </div>
+
+          <!-- 昵称输入框 -->
+          <input class="inp" id="editName" value="${escapeHtml(u.name)}" placeholder="昵称" style="margin-bottom: 20px;">
+
+          <!-- Emoji 头像选择区 -->
+          <div class="section-title" style="margin: 0 0 10px 0;">或者选择 Emoji 头像</div>
+          
+          <!-- 头像网格（外面包裹一层 flex 方便换行） -->
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+            ${['🦜', '🦆', '🦅', '🦉', '🐦', '🌿', '🌳', '📷', '🔭', '🧢'].map(a => `
+              <span class="avatar" style="cursor:pointer; ${u.avatar === a ? 'border:3px solid var(--green)' : 'border:3px solid transparent'}" data-ft="avatar" data-v="${a}">${a}</span>
+            `).join('')}
+          </div>
+
+          <!-- 保存按钮 -->
+          <button class="btn primary block" id="saveProfile">保存资料</button>
+        </div>
+      </div>`;
+      
+    // ⚠️ 关键：直接赋值，千万别调 replaceIcons，否则又乱码了
+    el.innerHTML = html;
     
+    // 绑定头像选择点击事件
     el.querySelectorAll('[data-ft="avatar"]').forEach(x => x.addEventListener('click', () => {
       el.querySelectorAll('[data-ft="avatar"]').forEach(y => y.style.border = '3px solid transparent');
       x.style.border = '3px solid var(--green)';
       el.dataset.pickedAvatar = x.dataset.v;
     }));
 
+    // 绑定保存按钮点击事件
     el.querySelector('#saveProfile').addEventListener('click', () => {
       const name = el.querySelector('#editName').value.trim();
       const pickedEmoji = el.dataset.pickedAvatar;
+      
       if (name) { u.name = name; }
       if (pickedEmoji) { u.avatar = pickedEmoji; }
+      
       Store.saveUser(u); 
       toast('资料已更新'); 
       switchPage('mine');
