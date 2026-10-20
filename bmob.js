@@ -76,13 +76,20 @@ const DB = {
       newMsg.set("sender", sender);
       newMsg.set("receiver", receiver);
       newMsg.set("text", text);
+      
+      // 👇 核心大招：代码级放开权限，允许所有人读取
+      const acl = new Bmob.ACL();
+      acl.setPublicReadAccess(true);  // 允许所有人看
+      acl.setPublicWriteAccess(true); // 允许所有人写
+      newMsg.setACL(acl);
+
       const res = await newMsg.save();
       return res; 
     } catch (e) {
       console.error("发送失败", e);
       return null;
     }
-  },
+  }
 
   // 获取聊天记录
   async getMsgs(userA, userB) {
