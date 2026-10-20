@@ -1598,18 +1598,19 @@ const App = (() => {
     switchPage('chat-detail');
   }
 
-    let chatPollingTimer = null; // 定时器，用来每隔2秒拉取数据
+     let chatPollingTimer = null;
 
   async function renderChatDetail() {
     const el = document.getElementById('page-chat-detail');
     if (!currentChatUser) { switchPage('msg'); return; }
 
-    // 清除之前的定时器，防止页面切换后还在后台偷偷请求
+    // 清除之前的定时器
     if (chatPollingTimer) clearInterval(chatPollingTimer);
 
-    const myName = Store.user().name; // 我自己的用户名
+    const myName = Store.user().name; 
+    // 👇 核心判断：当前聊天的对象，是不是本地写死的虚拟NPC？
+    const isVirtual = RANK_SEED.some(u => u.name === currentChatUser) || ['Feather Trace 官方', '系统消息'].includes(currentChatUser);
 
-    // 渲染 UI 骨架（先渲染出来，数据慢慢填）
     let html = `
       <div class="chat-header">
         <span class="back" onclick="App.switchPage('msg'); clearInterval(window.chatPollingTimer);">‹</span>
@@ -1628,19 +1629,71 @@ const App = (() => {
     const input = el.querySelector('#chatMsgInput');
     const sendBtn = el.querySelector('#chatSendBtn');
 
-    // 核心功能：从云端拉取数据并渲染
+    // ==========================================
+    // 线路 A：如果是虚拟 NPC，走本地 LocalStorage
+    // ==========================================
+    if (isVirtual) {
+      const allRecords = Store.chatRecords() || {};
+      const msgs = allRecords[currentChatUser] || [
+        { isMe: false, text: '你好呀！欢迎来到羽迹，很高兴认识你！' }
+      ];
+
+      const renderLocal = () => {
+        content.innerHTML = msgs.map(m => `
+          <div class="chat-msg ${m.isMe ? 'right' : 'left'}">
+            <div class="chat-avatar">${m.isMe ? Store.user().avatar : '👤'}</div>
+            <div class="chat-bubble">${escapeHtml(m.text)}</div>
+          </div>
+        `).join('');
+        content.scrollTop = content.scrollHeight;
+      };
+      renderLocal();
+
+      const sendLocal = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        
+        msgs.push({ isMe: true, text });
+        allRecords[currentChatUser] = msgs;
+        Store.saveChatRecords(allRecords);
+        renderLocal();
+
+        // 模拟NPC回复
+        setTimeout(() => {
+          const replies = ['对面是个虚拟账号，测试发消息可以发给另一个创建了账户的真实账号'];
+          msgs.push({ isMe: false, text: replies[Math.floor(Math.random() * replies.length)] });
+          allRecords[currentChatUser] = msgs;
+          Store.saveChatRecords(allRecords);
+          renderLocal();
+        }, 1000);
+      };
+
+      sendBtn.addEventListener('click', sendLocal);
+      input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendLocal(); });
+      return; // 虚拟线路结束，直接返回
+    }
+
+    // ==========================================
+    // 线路 B：如果是真实的云端用户，走 Bmob
+    // ==========================================
     const fetchMessages = async () => {
       if (typeof DB === 'undefined') return;
       
-      // 去 Bmob 拿我们俩的聊天记录
+      // 👇 这是你要的第一步打印日志
+      console.log("【云端查询】myName:", myName, "| currentChatUser:", currentChatUser);
+      
       const msgs = await DB.getMsgs(myName, currentChatUser);
       
+      console.log("【云端返回】记录数:", msgs.length);
+
       if (msgs.length === 0) {
+        // 防止网络延迟导致清空屏幕
+        if (content.innerHTML.includes('chat-bubble')) return; 
         content.innerHTML = `<div style="text-align:center; color:#aaa; font-size:12px; margin-top:20px;">暂无聊天记录，打个招呼吧！</div>`;
         return;
       }
 
-      // 生成气泡
       content.innerHTML = msgs.map(m => {
         const isMe = m.sender === myName;
         return `
@@ -1650,26 +1703,18 @@ const App = (() => {
           </div>
         `;
       }).join('');
-
-      // 每次更新内容后，自动滚动到底部
       content.scrollTop = content.scrollHeight;
     };
 
-    // 页面一进来就拉取一次
     fetchMessages();
-
-    // 👇 开启轮询：每隔 2 秒去云端问一句“有新消息没？”
-    // 挂载到 window 上方便离开时清除
     window.chatPollingTimer = setInterval(fetchMessages, 2000);
 
-    // 发送消息事件
-    const sendMsg = async () => {
+    const sendCloud = async () => {
       const text = input.value.trim();
       if (!text) return;
+      input.value = '';
       
-      input.value = ''; // 清空输入框
-      
-      // 先本地上屏（为了速度）
+      // 先本地上屏
       content.innerHTML += `
         <div class="chat-msg right">
           <div class="chat-avatar">${Store.user().avatar}</div>
@@ -1678,14 +1723,17 @@ const App = (() => {
       `;
       content.scrollTop = content.scrollHeight;
 
-      // 发送到 Bmob
-      await DB.sendMsg(myName, currentChatUser, text);
-      // 发完之后立刻拉取一次，同步状态
-      fetchMessages();
+      const res = await DB.sendMsg(myName, currentChatUser, text);
+      if (!res) {
+        toast('发送失败，请检查网络');
+      } else {
+        // 发送成功，延迟 0.5 秒拉取新数据
+        setTimeout(fetchMessages, 500);
+      }
     };
 
-    sendBtn.addEventListener('click', sendMsg);
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
+    sendBtn.addEventListener('click', sendCloud);
+    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendCloud(); });
   }
 
   /* ================= 真实云端账号系统 ================= */
