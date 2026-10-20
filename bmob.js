@@ -88,7 +88,7 @@ const DB = {
       console.error("发送失败", e);
       return null;
     }
-  }, // 👈 注意这里加了逗号！！！
+  }, // 👈 这次绝对有逗号了
 
   // 获取聊天记录
   async getMsgs(userA, userB) {
