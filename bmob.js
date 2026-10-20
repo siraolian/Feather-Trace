@@ -147,9 +147,10 @@ const DB = {
       const query = Bmob.Query('Messages');
       query.equalTo("receiver", "==", myName);
       // 查大于上次查看时间的消息
-      query.greaterThan("createdAt", lastCheckTime);
-      const count = await query.count();
-      return count > 0;
+      query.limit(10);
+      const results = await query.find();
+       // 只要有一条消息的创建时间晚于上次查看时间，就算有新消息
+      return results.some(msg => msg.createdAt > lastCheckTime);
     } catch (e) {
       console.error("检查未读失败", e);
       return false;
