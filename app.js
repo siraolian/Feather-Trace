@@ -765,26 +765,49 @@ const App = (() => {
   }
 
   /* ================= 信息 ================= */
-  function renderMsg(el) {
-    const msgs = [
-      { icon: '📢', name: 'Feather Trace 官方', text: '欢迎加入观鸟社区！完成新手任务可领徽章', time: '10:02', unread: true, type: '官方通知' },
-      { icon: '🔭', name: '镜头里的风', text: '回复了你的帖子："沙湖翠鸟可以试试下午4点去"', time: '09:41', unread: true, type: '私信' },
-      { icon: '🌳', name: '望江楼老周', text: '赞了你的帖子《沙湖公园的翠鸟终于蹲到了》', time: '昨天', unread: false, type: '私信' },
-      { icon: '🏆', name: '系统消息', text: '你的「十鸟观」成就已达成，徽章已发放！', time: '周一', unread: false, type: '官方通知' },
-      { icon: '🛒', name: '装备助手', text: '根据你的收藏，为你推荐了2件新装备', time: '上周', unread: false, type: '官方通知' }
-    ];
-    let html = `<div class="section-title">📬 私信与通知</div><div class="spot-list">`;
-    html += msgs.map(m => `
-        <div class="msg-item" onclick="${m.type === '私信' ? `App.openChat('${m.name}')` : ''}" style="${m.type === '私信' ? 'cursor:pointer;' : ''}">
-        <span class="msg-avatar">${m.icon}</span>
+    async function renderMsg(el) {
+    // 先渲染一个加载中
+    el.innerHTML = `<div class="empty" style="padding-top:50px;"><div class="e">⏳</div>正在同步云端消息...</div>`;
+    
+    const myName = Store.user().name;
+    if (typeof DB === 'undefined') return;
+
+    try {
+      // 从云端拉取联系人列表
+      const sessions = await DB.getChatSessions(myName);
+      
+      let html = `<div class="section-title">📬 私信列表</div><div class="spot-list">`;
+      
+      if (sessions.length === 0) {
+        html += `<div class="empty"><div class="e">💬</div>暂无云端消息，去搜索其他用户发消息吧！</div>`;
+      } else {
+        html += sessions.map(m => `
+          <div class="msg-item" onclick="App.openChat('${m.name}')" style="cursor:pointer;">
+            <span class="msg-avatar">👤</span>
+            <div class="msg-info">
+              <div class="msg-name">${escapeHtml(m.name)}</div>
+              <div class="msg-text">${escapeHtml(m.text)}</div>
+            </div>
+            <span class="msg-time">${m.time}</span>
+          </div>
+        `).join('');
+      }
+      
+      // 把官方的假通知留着垫底
+      html += `<div class="msg-item" style="margin-top:20px;">
+        <span class="msg-avatar">📢</span>
         <div class="msg-info">
-          <div class="msg-name">${m.name} ${m.unread ? '<span class="msg-badge">新</span>' : ''}</div>
-          <div class="msg-text">${m.text}</div>
+          <div class="msg-name">Feather Trace 官方</div>
+          <div class="msg-text">欢迎加入观鸟社区！完成新手任务可领徽章</div>
         </div>
-        <span class="msg-time">${m.time}</span>
-      </div>`).join('');
-    html += `</div>`;
-    el.innerHTML = replaceIcons(html);
+        <span class="msg-time">10:02</span>
+      </div>`;
+      
+      html += `</div>`;
+      el.innerHTML = replaceIcons(html);
+    } catch (e) {
+      el.innerHTML = `<div class="empty">加载失败，请检查网络</div>`;
+    }
   }
 
   /* ================= 我的 ================= */
@@ -1163,24 +1186,20 @@ const App = (() => {
     if (['comm', 'map', 'ai', 'progress', 'shop', 'msg', 'mine'].includes(h)) switchPage(h);
     else switchPage('comm');
 
-        // 👇 启动全局未读消息探测（每 5 秒探测一次）
+    // 👇 启动全局未读消息探测（每 5 秒探测一次）
     setInterval(async () => {
       const u = Store.user();
-      if (!u || !u.name || typeof DB === 'undefined') return;
+      // 如果我们还在信息页或者聊天页，就不用亮红点了
+      if (!u || !u.name || typeof DB === 'undefined' || current === 'msg' || current === 'chat-detail') return;
 
       try {
-        const query = Bmob.Query('Messages');
-        // 查发给我的消息，且时间晚于上次检查时间
-        query.equalTo("receiver", "==", u.name);
-        query.greaterThan("createdAt", lastCheckTime);
-        const results = await query.find();
-
-        // 如果查到了新消息，且我不在信息页/聊天页，就亮红点
-        if (results.length > 0) {
+        // 调用我们在 bmob.js 里写好的方法
+        const hasNew = await DB.checkUnread(u.name, lastCheckTime);
+        if (hasNew) {
           showRedDot();
         }
       } catch (e) {
-        // 静默处理网络错误，不打扰用户
+        // 静默处理
       }
     }, 5000);
   }
