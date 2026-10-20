@@ -548,7 +548,8 @@ i[class^="ri-"] {
 .comment-replies div:last-child { margin-bottom: 0; }
 
 /* ====== 聊天详情页 ====== */
-#page-chat-detail { display: flex; flex-direction: column; background: #F3F4F6; height: 100%; }
+#page-chat-detail { display: none; flex-direction: column; background: #F3F4F6; height: 100%; }
+#page-chat-detail.active { display: flex; }
 .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
 .chat-header .back { font-size: 20px; color: #333; cursor: pointer; }
 .chat-header .title { font-size: 16px; font-weight: 600; }
