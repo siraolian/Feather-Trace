@@ -46,6 +46,21 @@ const App = (() => {
   let currentProfileName = ''; 
   let currentPostId = '';
 
+// 记录上次查看消息的时间，防止旧消息一直触发红点
+  let lastCheckTime = new Date().toISOString();
+  function showRedDot() {
+    const dot = document.getElementById('msgRedDot');
+    if (dot && current !== 'msg' && current !== 'chat-detail') {
+      dot.classList.add('show');
+    }
+  }
+
+  // 隐藏红点
+  function hideRedDot() {
+    const dot = document.getElementById('msgRedDot');
+    if (dot) dot.classList.remove('show');
+  }
+  
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -123,21 +138,21 @@ const App = (() => {
     Store.saveHistory(history);
   }
   
-  function renderCurrent() {
+    function renderCurrent() {
     const containerId = TOP_TABS.includes(current) ? 'page-' + current : 'page-comm';
     const el = document.getElementById(containerId);
+    
+    // 👇 确保这里是 if 开头，而不是直接写 else if
+    if (current === 'comm') renderComm(el);
+    else if (current === 'map') { MapView.render(el); MapView.useGeolocation(); }
+    else if (current === 'ai') AI.render(el);
+    else if (current === 'progress') renderProgress(el);
+    else if (current === 'shop') renderShop(el);
     else if (current === 'msg') { 
       hideRedDot(); 
       lastCheckTime = new Date().toISOString(); 
       renderMsg(el); 
     }
-    if (current === 'comm') renderComm(el);
-      
-    else if (current === 'map') { MapView.render(el); MapView.useGeolocation(); }
-    else if (current === 'ai') AI.render(el);
-    else if (current === 'progress') renderProgress(el);
-    else if (current === 'shop') renderShop(el);
-    else if (current === 'msg') renderMsg(el);
     else if (current === 'mine') renderMine(el);
     else if (current === 'my-birds') renderMyBirds();
     else if (current === 'my-badges') renderMyBadges();
@@ -156,24 +171,6 @@ const App = (() => {
   }
 
   /* ================= 交流区 ================= */
-
-  // 记录上次查看消息的时间，防止旧消息一直触发红点
-  let lastCheckTime = new Date().toISOString();
-
-  // 显示红点
-  function showRedDot() {
-    const dot = document.getElementById('msgRedDot');
-    if (dot && current !== 'msg' && current !== 'chat-detail') {
-      dot.classList.add('show');
-    }
-  }
-
-  // 隐藏红点
-  function hideRedDot() {
-    const dot = document.getElementById('msgRedDot');
-    if (dot) dot.classList.remove('show');
-  }
-  
   let commTab = 'follow';
 
   function renderComm(el) {
