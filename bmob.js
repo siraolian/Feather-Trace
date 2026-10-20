@@ -77,10 +77,9 @@ const DB = {
       newMsg.set("receiver", receiver);
       newMsg.set("text", text);
       
-      // 👇 核心大招：代码级放开权限，允许所有人读取
       const acl = new Bmob.ACL();
-      acl.setPublicReadAccess(true);  // 允许所有人看
-      acl.setPublicWriteAccess(true); // 允许所有人写
+      acl.setPublicReadAccess(true);
+      acl.setPublicWriteAccess(true); 
       newMsg.setACL(acl);
 
       const res = await newMsg.save();
@@ -89,24 +88,28 @@ const DB = {
       console.error("发送失败", e);
       return null;
     }
-  }
+  }, // 👈 注意这里加了逗号！！！
 
   // 获取聊天记录
   async getMsgs(userA, userB) {
     try {
-      const query1 = Bmob.Query('Messages');
-      query1.equalTo("sender", "==", userA);
-      query1.equalTo("receiver", "==", userB);
+      const [res1, res2] = await Promise.all([
+        (async () => {
+          const q = Bmob.Query('Messages');
+          q.equalTo("sender", "==", userA);
+          q.equalTo("receiver", "==", userB);
+          return await q.find();
+        })(),
+        (async () => {
+          const q = Bmob.Query('Messages');
+          q.equalTo("sender", "==", userB);
+          q.equalTo("receiver", "==", userA);
+          return await q.find();
+        })()
+      ]);
 
-      const query2 = Bmob.Query('Messages');
-      query2.equalTo("sender", "==", userB);
-      query2.equalTo("receiver", "==", userA);
-
-      const mainQuery = Bmob.Query('Messages');
-      mainQuery.orQuery([query1, query2]); 
-      
-      const res = await mainQuery.find();
-      return res.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); 
+      let allMsgs = [...res1, ...res2];
+      return allMsgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); 
     } catch (e) {
       console.error("获取记录失败", e);
       return [];
