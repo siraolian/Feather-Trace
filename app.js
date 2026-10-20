@@ -126,8 +126,13 @@ const App = (() => {
   function renderCurrent() {
     const containerId = TOP_TABS.includes(current) ? 'page-' + current : 'page-comm';
     const el = document.getElementById(containerId);
-    
+    else if (current === 'msg') { 
+      hideRedDot(); 
+      lastCheckTime = new Date().toISOString(); 
+      renderMsg(el); 
+    }
     if (current === 'comm') renderComm(el);
+      
     else if (current === 'map') { MapView.render(el); MapView.useGeolocation(); }
     else if (current === 'ai') AI.render(el);
     else if (current === 'progress') renderProgress(el);
@@ -151,6 +156,24 @@ const App = (() => {
   }
 
   /* ================= 交流区 ================= */
+
+  // 记录上次查看消息的时间，防止旧消息一直触发红点
+  let lastCheckTime = new Date().toISOString();
+
+  // 显示红点
+  function showRedDot() {
+    const dot = document.getElementById('msgRedDot');
+    if (dot && current !== 'msg' && current !== 'chat-detail') {
+      dot.classList.add('show');
+    }
+  }
+
+  // 隐藏红点
+  function hideRedDot() {
+    const dot = document.getElementById('msgRedDot');
+    if (dot) dot.classList.remove('show');
+  }
+  
   let commTab = 'follow';
 
   function renderComm(el) {
@@ -1142,6 +1165,27 @@ const App = (() => {
     const h = location.hash.replace('#', '');
     if (['comm', 'map', 'ai', 'progress', 'shop', 'msg', 'mine'].includes(h)) switchPage(h);
     else switchPage('comm');
+
+        // 👇 启动全局未读消息探测（每 5 秒探测一次）
+    setInterval(async () => {
+      const u = Store.user();
+      if (!u || !u.name || typeof DB === 'undefined') return;
+
+      try {
+        const query = Bmob.Query('Messages');
+        // 查发给我的消息，且时间晚于上次检查时间
+        query.equalTo("receiver", "==", u.name);
+        query.greaterThan("createdAt", lastCheckTime);
+        const results = await query.find();
+
+        // 如果查到了新消息，且我不在信息页/聊天页，就亮红点
+        if (results.length > 0) {
+          showRedDot();
+        }
+      } catch (e) {
+        // 静默处理网络错误，不打扰用户
+      }
+    }, 5000);
   }
 
   /* ================= 新增：设置页面 ================= */
@@ -1607,6 +1651,9 @@ const App = (() => {
     // 清除之前的定时器
     if (chatPollingTimer) clearInterval(chatPollingTimer);
 
+    lastCheckTime = new Date().toISOString(); 
+    hideRedDot();
+    
     const myName = Store.user().name; 
     // 👇 核心判断：当前聊天的对象，是不是本地写死的虚拟NPC？
     const isVirtual = RANK_SEED.some(u => u.name === currentChatUser) || ['Feather Trace 官方', '系统消息'].includes(currentChatUser);
