@@ -108,5 +108,51 @@ const DB = {
       console.error("获取记录失败", e);
       return [];
     }
+  },
+
+    // 👇 新增：获取我的所有聊天联系人（用于渲染信息列表）
+  async getChatSessions(myName) {
+    try {
+      const query = Bmob.Query('Messages');
+      // 找出所有发给我的消息
+      query.equalTo("receiver", "==", myName);
+      query.order("-createdAt"); // 按时间倒序
+      query.limit(100); // 只取最近100条
+      const results = await query.find();
+      
+      // 提取出不同的发送者
+      let senders = [];
+      let sessions = [];
+      results.forEach(msg => {
+        const sender = msg.sender;
+        if (!senders.includes(sender)) {
+          senders.push(sender);
+          sessions.push({
+            name: sender,
+            text: msg.text,
+            time: msg.createdAt ? msg.createdAt.slice(11, 16) : '刚刚' // 截取时间
+          });
+        }
+      });
+      return sessions;
+    } catch (e) {
+      console.error("获取列表失败", e);
+      return [];
+    }
+  },
+
+  // 👇 新增：检查是否有新消息（用于亮红点）
+  async checkUnread(myName, lastCheckTime) {
+    try {
+      const query = Bmob.Query('Messages');
+      query.equalTo("receiver", "==", myName);
+      // 查大于上次查看时间的消息
+      query.greaterThan("createdAt", lastCheckTime);
+      const count = await query.count();
+      return count > 0;
+    } catch (e) {
+      console.error("检查未读失败", e);
+      return false;
+    }
   }
 };
