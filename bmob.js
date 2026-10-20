@@ -76,19 +76,13 @@ const DB = {
       newMsg.set("sender", sender);
       newMsg.set("receiver", receiver);
       newMsg.set("text", text);
-      
-      const acl = new Bmob.ACL();
-      acl.setPublicReadAccess(true);
-      acl.setPublicWriteAccess(true); 
-      newMsg.setACL(acl);
-
       const res = await newMsg.save();
       return res; 
     } catch (e) {
       console.error("发送失败", e);
       return null;
     }
-  }, // 👈 这次绝对有逗号了
+  }, // 👈 就是这里！这次有逗号了！
 
   // 获取聊天记录
   async getMsgs(userA, userB) {
