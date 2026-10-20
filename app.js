@@ -450,12 +450,13 @@ const App = (() => {
     if (users.length) {
       html += `<div class="search-block"><div class="search-block-title">👤 相关用户</div>`;
       html += users.map(u => `
-        <div class="res-card" onclick="App.viewUserProfile('${u.name}')">
+        <div class="res-card" onclick="App.viewUserProfile('${u.name}')" style="display:flex; align-items:center; gap:10px;">
           <div class="res-icon">${u.icon}</div>
-          <div class="res-info">
+          <div class="res-info" style="flex:1;">
             <div class="res-title">${u.name}</div>
             <div class="res-desc">累计观鸟 ${u.birds} 种 · 获赞 ${u.likes}</div>
           </div>
+          <button class="btn ghost" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; flex-shrink: 0;" onclick="event.stopPropagation(); App.openChat('${u.name}')">发消息</button>
         </div>
       `).join('');
       html += `</div>`;
@@ -563,16 +564,25 @@ const App = (() => {
     const userPosts = allPosts.filter(p => p.author === authorName);
     const userObj = RANK_SEED.find(r => r.name === authorName) || { name: authorName, icon: '🐦', birds: 0, likes: 0 };
     
-    let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('comm')">← 返回交流</div>
-      <div class="card" style="display:flex; align-items:center; gap:15px;">
+        let html = `<div class="page-sub"><div class="page-back-btn" onclick="App.switchPage('comm')">← 返回交流</div>
+      <div class="card" style="display:flex; align-items:center; gap:15px; position:relative;">
+        <!-- 头像 -->
         <div style="width:60px; height:60px; border-radius:50%; background:var(--green-light); display:flex; justify-content:center; align-items:center; font-size:30px;">
           ${userObj.icon}
         </div>
-        <div>
+        
+        <!-- 用户信息 -->
+        <div style="flex:1;">
           <div style="font-size:18px; font-weight:700;">${escapeHtml(userObj.name)}</div>
           <div style="font-size:12px; color:var(--text2); margin-top:5px;">累计观鸟：🐦 ${userObj.birds} 种 · 获赞：👍 ${userObj.likes}</div>
         </div>
+
+        <!-- 👇 新增：发消息按钮 -->
+        <button class="btn primary" style="padding: 6px 14px; font-size: 13px; border-radius: 20px; flex-shrink:0;" onclick="App.openChat('${userObj.name}')">
+          💬 发消息
+        </button>
       </div>
+      
       <div class="section-title" style="margin:15px 0 8px 0;">TA的帖子 (${userPosts.length})</div>
       <div class="spot-list">`;
       
@@ -1731,14 +1741,15 @@ const App = (() => {
         }
       } else {
         const res = await DB.login(email, password);
-        if (res && res.success) {
+         if (res && res.success) {
           toast('登录成功');
           const u = Store.user();
           u.name = res.user.username || '云端用户'; 
           Store.saveUser(u);
           closeModal('modalAuth');
-          renderMine(document.getElementById('page-mine'));
-        } else {
+          // 👇 直接跳转并刷新整个页面视图，名字瞬间变化
+          App.switchPage('mine'); 
+        }else {
           toast(res ? res.msg : '登录失败，请检查网络');
         }
       }
@@ -1756,7 +1767,7 @@ const App = (() => {
     birdById, viewUserProfile, handleAvatarUpload, doSearch, gotoSpotOnMap,
     openPostDetail, toggleLike, toggleFish, toggleSave, toggleFollow,
     openCommentModal, closeCommentModal, submitComment,
-    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply, openChat, openAuthModal, handleAuth
+    openUploadBirdModal, submitUploadBird, likeComment, openReplyModal, closeReplyModal, submitReply, openChat, openAuthModal, handleAuth, openChat
   };
 })();
 
