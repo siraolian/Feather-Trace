@@ -193,7 +193,7 @@ const DB = {
         comments: item.comments,
         fish: item.fish,
         time: item.createdAt ? item.createdAt.slice(5, 16) : '刚刚',
-        realComments: []
+        realComments: item.realComments || []
       }));
     } catch (e) { console.error("拉取帖子失败", e); return []; }
   },
@@ -223,5 +223,21 @@ const DB = {
       }
       return [];
     } catch (e) { return []; }
+  },
+
+    // 更新云端帖子的字段（点赞、评论等）
+  async updatePost(postId, data) {
+    try {
+      const q = Bmob.Query('Posts');
+      // 根据云端生成的 ID 找到那条帖子
+      q.get(postId).then(res => {
+        for (let key in data) {
+          res.set(key, data[key]);
+        }
+        res.save();
+      });
+    } catch (e) {
+      console.error("更新帖子失败", e);
+    }
   }
 };
