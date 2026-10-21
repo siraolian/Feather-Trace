@@ -1487,7 +1487,15 @@ const App = (() => {
           <div class="comment-user">${c.user}</div>
           <div class="comment-text">${escapeHtml(c.text)}</div>
           <div class="comment-actions">
-            <span onclick="App.likeComment(${idx})" class="${c.isLiked ? 'liked' : ''}">${c.isLiked ? '❤️' : '🤍'} ${c.likes || 0}</span>
+            ${(() => {
+  // 获取当前登录的用户名
+  const myName = Store.user().name;
+  // 如果 likedBy 数组不存在，就初始化为空数组
+  if (!c.likedBy) c.likedBy = []; 
+  // 判断自己的名字在不在这个数组里
+  const isLiked = c.likedBy.includes(myName);
+  return `<span onclick="App.likeComment(${idx})" class="${isLiked ? 'liked' : ''}">${isLiked ? '❤️' : '🤍'} ${c.likes || 0}</span>`;
+})()}
             <span onclick="App.openReplyModal(${idx})">💬 回复</span>
           </div>
           ${c.replies && c.replies.length > 0 ? `
@@ -1650,17 +1658,31 @@ const App = (() => {
   /* ================= 新增功能：评论点赞与回复 ================= */
   let replyTargetIndex = -1;
 
-  function likeComment(idx) {
+    function likeComment(idx) {
     const posts = Store.posts();
     const p = posts.find(x => x.id === currentPostId);
     if (!p || !p.realComments) return;
     
     const c = p.realComments[idx];
-    c.isLiked = !c.isLiked;
-    c.likes = c.isLiked ? (c.likes || 0) + 1 : (c.likes || 1) - 1;
+    if (!c.likedBy) c.likedBy = []; // 兼容老数据
+    
+    const myName = Store.user().name;
+    const index = c.likedBy.indexOf(myName);
+    
+    if (index > -1) {
+      // 如果我的名字在花名册里，说明我点过赞了，现在取消点赞
+      c.likedBy.splice(index, 1);
+      c.likes = Math.max(0, (c.likes || 1) - 1);
+    } else {
+      // 如果我的名字不在里面，说明我没点过赞，现在点赞
+      c.likedBy.push(myName);
+      c.likes = (c.likes || 0) + 1;
+    }
     
     Store.savePosts(posts);
-    renderPostDetail(); // 重绘
+    renderPostDetail(); // 重绘 UI
+    
+    // 把最新的评论数组（包含花名册）发给云端
     if (typeof DB !== 'undefined') {
       DB.updatePost(currentPostId, { realComments: p.realComments });
     }
