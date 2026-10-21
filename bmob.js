@@ -230,12 +230,12 @@ const DB = {
     try {
       const q = Bmob.Query('Posts');
       // 根据云端生成的 ID 找到那条帖子
-      q.get(postId).then(res => {
-        for (let key in data) {
-          res.set(key, data[key]);
-        }
-        res.save();
-      });
+      const res = await q.get(postId); 
+      for (let key in data) {
+        res.set(key, data[key]);
+      }
+      await res.save();
+      console.log("帖子数据同步到云端成功", data);
     } catch (e) {
       console.error("更新帖子失败", e);
     }
