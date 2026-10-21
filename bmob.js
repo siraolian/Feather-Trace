@@ -155,5 +155,79 @@ const DB = {
       console.error("检查未读失败", e);
       return false;
     }
+  },
+
+    // 发布帖子到云端（带公开读取权限）
+  async savePost(post) {
+    try {
+      const q = Bmob.Query('Posts');
+      q.set("title", post.title);
+      q.set("content", post.content);
+      q.set("author", post.author);
+      q.set("avatar", post.avatar);
+      q.set("type", post.type);
+      q.set("likes", post.likes || 0);
+      q.set("comments", post.comments || 0);
+      q.set("fish", post.fish || 0);
+
+      // 强制赋予所有人读取权限（因为表是ACL模式）
+      const acl = new Bmob.ACL();
+      acl.setPublicReadAccess(true);  
+      acl.setPublicWriteAccess(true); 
+      q.setACL(acl);
+
+      const res = await q.save();
+      return res;
+    } catch (e) { console.error("发帖失败", e); return null; }
+  },
+
+  // 获取所有云端帖子
+  async getPosts() {
+    try {
+      const q = Bmob.Query('Posts');
+      q.order("-createdAt"); // 最新的在前面
+      q.limit(50); // 拉取最近50条
+      const res = await q.find();
+      return res.map(item => ({
+        id: item.objectId,
+        title: item.title,
+        content: item.content,
+        author: item.author,
+        avatar: item.avatar,
+        type: item.type,
+        likes: item.likes,
+        comments: item.comments,
+        fish: item.fish,
+        time: item.createdAt ? item.createdAt.slice(5, 16) : '刚刚',
+        realComments: []
+      }));
+    } catch (e) { console.error("拉取帖子失败", e); return []; }
+  },
+
+  // 同步用户的图鉴（鸟种收录）
+  async updateUserBirds(username, birdsArray) {
+    try {
+      const q = Bmob.Query('Users');
+      q.equalTo("username", "==", username);
+      const users = await q.find();
+      if (users.length > 0) {
+        const user = users[0];
+        user.set('birds', birdsArray.join(',')); // 转成字符串存
+        await user.save();
+      }
+    } catch (e) { console.error("同步图鉴失败", e); }
+  },
+
+  // 登录时拉取用户的图鉴
+  async getUserBirds(username) {
+    try {
+      const q = Bmob.Query('Users');
+      q.equalTo("username", "==", username);
+      const users = await q.find();
+      if (users.length > 0 && users[0].birds) {
+        return users[0].birds.split(','); // 转回数组
+      }
+      return [];
+    } catch (e) { return []; }
   }
 };
