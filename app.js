@@ -1661,6 +1661,9 @@ const App = (() => {
     
     Store.savePosts(posts);
     renderPostDetail(); // 重绘
+    if (typeof DB !== 'undefined') {
+      DB.updatePost(currentPostId, { realComments: p.realComments });
+    }
   }
 
   function openReplyModal(idx) {
@@ -1694,6 +1697,9 @@ const App = (() => {
     closeReplyModal();
     toast('回复成功');
     renderPostDetail(); // 重绘
+    if (typeof DB !== 'undefined') {
+      DB.updatePost(currentPostId, { realComments: p.realComments });
+    }
   }
 
   /* ================= 聊天系统 ================= */
