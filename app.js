@@ -178,12 +178,10 @@ const App = (() => {
      try {
         const cloudPosts = await DB.getPosts();
         console.log("🔍 从云端拉取的帖子数量:", cloudPosts.length); // 看看控制台打印了几条
-        const oldPosts = Store.posts();
-        // 找出本地的虚拟种子帖子（根据你的 data.js，假帖子的 ID 通常不带 u 或很短）
-        const localOnlyPosts = oldPosts.filter(p => !p.id.startsWith('u')); 
+        const seedPosts = typeof SEED_POSTS !== 'undefined' ? SEED_POSTS : [];
         
-        // 云端拉下来的放前面，本地虚拟的放后面
-        Store.savePosts([...cloudPosts, ...localOnlyPosts]);
+        // 云端真实帖子放前面，最初的虚拟帖子放后面。绝不去碰 Store 里的旧数据！
+        Store.savePosts([...cloudPosts, ...seedPosts]);
       } catch (e) {
         console.error("拉取帖子失败", e);
       }
