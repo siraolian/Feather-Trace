@@ -173,7 +173,13 @@ const App = (() => {
   /* ================= 交流区 ================= */
   let commTab = 'follow';
 
-  function renderComm(el) {
+  async function renderComm(el) {
+    if (typeof DB !== 'undefined') {
+      const cloudPosts = await DB.getPosts();
+      if (cloudPosts && cloudPosts.length > 0) {
+        Store.savePosts(cloudPosts); 
+      }
+    }
     const tabs = [
       ['follow', '关注'], ['region', '地区'], ['guide', '攻略'], ['share', '分享'], ['qa', '问答']
     ];
@@ -361,6 +367,9 @@ const App = (() => {
     const posts = Store.posts(); 
     posts.unshift(post); 
     Store.savePosts(posts);
+    if (typeof DB !== 'undefined') {
+      DB.savePost(post); 
+    }
     
     const mine = Store.myPosts(); 
     mine.push(post.id); 
@@ -635,6 +644,9 @@ const App = (() => {
     const list = Store.birds();
     if (!list.includes(id)) {
       list.push(id); Store.saveBirds(list);
+      if (typeof DB !== 'undefined') {
+        DB.updateUserBirds(Store.user().name, list);
+      }
       addExp(5);
       const b = birdById(id);
       toast(`已收录「${b.name}」+5经验（共${list.length}种）`);
@@ -1845,6 +1857,12 @@ const App = (() => {
           u.name = username;
           u.code = res.user.id;
           Store.saveUser(u);
+          if (typeof DB !== 'undefined') {
+            const cloudBirds = await DB.getUserBirds(u.name);
+            if (cloudBirds && cloudBirds.length > 0) {
+              Store.saveBirds(cloudBirds);
+            }
+          }
           closeModal('modalAuth');
           renderMine(document.getElementById('page-mine'));
         } else {
