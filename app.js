@@ -858,7 +858,20 @@ const App = (() => {
     
     const followingCount = (Store.following() || []).length;
     const followersCount = (Store.followers() || []).length;
-
+ let realLikesReceived = 0;
+    Store.posts().forEach(p => {
+      if (p.author === u.name) {
+        realLikesReceived += (p.likes || 0); // 算帖子赞
+      }
+      if (p.realComments) {
+        p.realComments.forEach(c => {
+          if (c.user === u.name) {
+            realLikesReceived += (c.likes || 0); // 算评论赞
+          }
+        });
+      }
+    });
+    
     let html = `
       <div class="mine-head" style="padding-bottom: 30px;">
         <span class="avatar" onclick="App.switchPage('edit-profile')" style="cursor:pointer; width: 70px; height: 70px; font-size: 30px; background: rgba(255,255,255,0.2); color: #fff;">
@@ -884,8 +897,9 @@ const App = (() => {
               <b style="font-size: 16px; cursor: pointer;">${followingCount}</b> 
               <span style="cursor: pointer; padding: 2px 5px;">关注</span>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <b style="font-size: 16px;">${u.likesReceived}</b> 
+             <div style="display: flex; flex-direction: column; align-items: center;">
+              <!-- 👇 这里换成刚刚算出来的真实总数 -->
+              <b style="font-size: 16px;">${realLikesReceived}</b> 
               <span style="padding: 2px 5px;">获赞</span>
             </div>
           </div>
