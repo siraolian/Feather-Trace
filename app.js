@@ -178,9 +178,12 @@ const App = (() => {
      try {
         const cloudPosts = await DB.getPosts();
         console.log("🔍 从云端拉取的帖子数量:", cloudPosts.length); // 看看控制台打印了几条
-        if (cloudPosts && cloudPosts.length > 0) {
-          Store.savePosts(cloudPosts); 
-        }
+        const oldPosts = Store.posts();
+        // 找出本地的虚拟种子帖子（根据你的 data.js，假帖子的 ID 通常不带 u 或很短）
+        const localOnlyPosts = oldPosts.filter(p => !p.id.startsWith('u')); 
+        
+        // 云端拉下来的放前面，本地虚拟的放后面
+        Store.savePosts([...cloudPosts, ...localOnlyPosts]);
       } catch (e) {
         console.error("拉取帖子失败", e);
       }
@@ -851,8 +854,8 @@ const App = (() => {
     const customBirdsCount = (Store.customBirds() || []).length;
     const totalBirds = sysBirdsCount + customBirdsCount;
     
-    const posts = Store.myPosts();
-    const myPosts = Store.posts().filter(p => posts.includes(p.id));
+        // 改：只要作者名字是你，就算作你的帖子！
+    const myPosts = Store.posts().filter(p => p.author === u.name);
     const ach = achieveState().filter(a => a.done);
     
     const followingCount = (Store.following() || []).length;
