@@ -170,12 +170,6 @@ const DB = {
       q.set("comments", post.comments || 0);
       q.set("fish", post.fish || 0);
 
-      // 强制赋予所有人读取权限（因为表是ACL模式）
-      const acl = new Bmob.ACL();
-      acl.setPublicReadAccess(true);  
-      acl.setPublicWriteAccess(true); 
-      q.setACL(acl);
-
       const res = await q.save();
       return res;
     } catch (e) { console.error("发帖失败", e); return null; }
