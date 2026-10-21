@@ -175,9 +175,14 @@ const App = (() => {
 
   async function renderComm(el) {
     if (typeof DB !== 'undefined') {
-      const cloudPosts = await DB.getPosts();
-      if (cloudPosts && cloudPosts.length > 0) {
-        Store.savePosts(cloudPosts); 
+     try {
+        const cloudPosts = await DB.getPosts();
+        console.log("🔍 从云端拉取的帖子数量:", cloudPosts.length); // 看看控制台打印了几条
+        if (cloudPosts && cloudPosts.length > 0) {
+          Store.savePosts(cloudPosts); 
+        }
+      } catch (e) {
+        console.error("拉取帖子失败", e);
       }
     }
     const tabs = [
@@ -353,7 +358,7 @@ const App = (() => {
     reader.readAsDataURL(file);
   }
 
-    function submitPost(el) {
+      async function submitPost(el) { // 👈 加上 async
     const title = el.querySelector('#postTitle').value.trim();
     const content = el.querySelector('#postContent').value.trim();
     if (!title) { toast('请填写标题'); return; }
@@ -367,13 +372,30 @@ const App = (() => {
     const posts = Store.posts(); 
     posts.unshift(post); 
     Store.savePosts(posts);
-    if (typeof DB !== 'undefined') {
-      DB.savePost(post); 
-    }
     
     const mine = Store.myPosts(); 
     mine.push(post.id); 
     Store.saveMyPosts(mine);
+
+    // 👇 核心修改：先把数据发到云端，测试是否成功
+    if (typeof DB !== 'undefined') {
+      toast('正在同步到云端...');
+      try {
+        const res = await DB.savePost(post); // 👈 加上 await
+        if (res) {
+          console.log("✅ 云端发帖成功", res);
+          toast('云端同步成功！');
+        } else {
+          console.error("❌ 云端发帖返回空");
+          toast('云端同步失败，请检查权限');
+        }
+      } catch (err) {
+        console.error("❌ 云端发帖异常", err);
+        toast('网络异常，仅保存在本地');
+      }
+    } else {
+      console.error("DB 对象不存在！请检查 bmob.js");
+    }
     
     addExp(10);
     
