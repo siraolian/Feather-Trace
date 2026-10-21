@@ -1422,6 +1422,9 @@ const App = (() => {
     }
     Store.savePosts(posts);
     if (current === 'post-detail') renderPostDetail();
+    if (typeof DB !== 'undefined') {
+      DB.updatePost(id, { likes: p.likes });
+    }
   }
 
   function toggleFish(id, el) {
@@ -1586,6 +1589,12 @@ const App = (() => {
     toast('评论发布成功');
     closeCommentModal();
     renderPostDetail(); // 刷新详情页
+    if (typeof DB !== 'undefined') {
+      DB.updatePost(currentPostId, { 
+        comments: p.comments, 
+        realComments: p.realComments 
+      });
+    }
   }
 
   /* ================= 新增功能：上传鸟种 ================= */
