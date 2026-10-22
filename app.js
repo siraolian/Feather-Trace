@@ -1754,6 +1754,7 @@ const App = (() => {
   }
 
   function openReplyModal(idx) {
+    if (!checkLogin()) return;
     replyTargetIndex = idx;
     const modal = document.getElementById('replyModal');
     const input = document.getElementById('replyInput');
@@ -1767,6 +1768,7 @@ const App = (() => {
   }
 
   function submitReply() {
+    if (!checkLogin()) return;
     const input = document.getElementById('replyInput');
     const text = input.value.trim();
     if (!text) { toast('回复不能为空'); return; }
