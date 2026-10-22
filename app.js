@@ -45,6 +45,7 @@ const App = (() => {
   let current = 'comm';
   let currentProfileName = ''; 
   let currentPostId = '';
+  let pagePollingTimer = null;
 
 // 记录上次查看消息的时间，防止旧消息一直触发红点
   let lastCheckTime = new Date().toISOString();
@@ -1249,6 +1250,39 @@ const App = (() => {
         }
       } catch (e) {
         // 静默处理
+      }
+    }, 5000);
+
+    // 定时器 2：当前页面自动无感刷新（带位置记忆）
+    // ==========================================
+    if (pagePollingTimer) clearInterval(pagePollingTimer);
+    pagePollingTimer = setInterval(async () => {
+      if (typeof DB === 'undefined') return;
+      
+      // 1. 去云端拉取最新帖子数据
+      const cloudPosts = await DB.getPosts();
+      if (!cloudPosts) return;
+
+      // 2. 合并数据（云端放前面，本地初始假数据放后面）
+      const seedPosts = typeof SEED_POSTS !== 'undefined' ? SEED_POSTS : [];
+      Store.savePosts([...cloudPosts, ...seedPosts]);
+
+      // 3. 记录当前滚动条位置
+      const mainEl = document.querySelector('.main');
+      const scrollPos = mainEl ? mainEl.scrollTop : 0;
+
+      // 4. 静默原地重绘
+      if (current === 'comm') {
+        const el = document.getElementById('page-comm');
+        if (el) { renderComm(el); if (mainEl) mainEl.scrollTop = scrollPos; }
+      }
+      else if (current === 'post-detail') {
+        renderPostDetail(); 
+        if (mainEl) mainEl.scrollTop = scrollPos; 
+      }
+      else if (current === 'mine') {
+        const el = document.getElementById('page-mine');
+        if (el) { renderMine(el); if (mainEl) mainEl.scrollTop = scrollPos; }
       }
     }, 5000);
   }
