@@ -565,10 +565,10 @@ const App = (() => {
 
     // 4. 搜帖子
     const posts = Store.posts().filter(p => p.title.toLowerCase().includes(lowerKw) || p.content.toLowerCase().includes(lowerKw));
-    if (posts.length) {
+        if (posts.length) {
       html += `<div class="search-block"><div class="search-block-title">📝 交流帖子</div>`;
       html += posts.slice(0, 5).map(p => `
-        <div class="res-card" onclick="App.toast('跳转到帖子详情（演示）')">
+        <div class="res-card" onclick="App.openPostDetail('${p.id}')" style="cursor:pointer;">
           <div class="res-icon" style="background:#FFF3E0;color:#FB8C00"><i class="ri-article-line"></i></div>
           <div class="res-info">
             <div class="res-title">${escapeHtml(p.title)}</div>
@@ -654,10 +654,10 @@ const App = (() => {
       
       <div class="section-title" style="margin:15px 0 8px 0;">TA的帖子 (${userPosts.length})</div>
       <div class="spot-list">`;
-      
+
     if (userPosts.length) {
       userPosts.forEach(p => {
-        html += `<div class="spot-item">
+        html += `<div class="spot-item" onclick="App.openPostDetail('${p.id}')" style="cursor:pointer;">
           <div class="spot-name">📝 ${escapeHtml(p.title)}</div>
           <div class="spot-meta"><span>${p.time}</span><span>👍 ${p.likes}</span></div>
         </div>`;
