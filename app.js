@@ -209,7 +209,10 @@ const App = (() => {
     el.querySelectorAll('[data-ft="comm-tab"]').forEach(x =>
       x.addEventListener('click', () => { commTab = x.dataset.v; renderComm(el); })
     );
-    el.querySelector('#fabPost').addEventListener('click', () => App.switchPage('create-post'));
+    el.querySelector('#fabPost').addEventListener('click', () => {
+      if (!checkLogin()) return;
+      App.switchPage('create-post');
+    });
     bindPostEvents(el);
   }
 
@@ -1619,6 +1622,7 @@ const App = (() => {
 
   /* ================= 评论系统 ================= */
   function openCommentModal() {
+    if (!checkLogin()) return;
     const modal = document.getElementById('commentModal');
     const input = document.getElementById('commentInput');
     input.value = '';
