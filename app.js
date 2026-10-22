@@ -72,6 +72,18 @@ const App = (() => {
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove('show'), 2200);
   }
+    // 登录拦截器
+  function checkLogin() {
+    const u = Store.user();
+    // 判断依据：如果本地生成的 code 还是 "FT-" 开头的随机码，说明是未登录的本地游客
+    if (!u || !u.code || u.code.startsWith('FT-')) {
+      toast('请先登录云端账号！');
+      // 延迟 1 秒后自动帮用户弹出登录框
+      setTimeout(() => openAuthModal(), 1000);
+      return false; // 拦截
+    }
+    return true; // 放行
+  }
 
   /* ================= 页面切换 ================= */
   const TOP_TABS = ['comm', 'map', 'ai', 'progress'];
@@ -361,6 +373,7 @@ const App = (() => {
   }
 
       async function submitPost(el) { // 👈 加上 async
+    if (!checkLogin()) return;
     const title = el.querySelector('#postTitle').value.trim();
     const content = el.querySelector('#postContent').value.trim();
     if (!title) { toast('请填写标题'); return; }
@@ -1458,6 +1471,7 @@ const App = (() => {
   
   /* ================= 帖子交互与详情 ================= */
   function toggleLike(id, el) {
+    if (!checkLogin()) return;
     const posts = Store.posts(), liked = Store.liked();
     const p = posts.find(x => x.id === id); if (!p) return;
     if (liked.includes(id)) {
@@ -1476,6 +1490,7 @@ const App = (() => {
   }
 
   function toggleFish(id, el) {
+    if (!checkLogin()) return;
     const posts = Store.posts(), fished = Store.fished();
     const p = posts.find(x => x.id === id); if (!p) return;
     if (fished.includes(id)) { toast('你已经打赏过这个帖子啦'); return; }
@@ -1620,6 +1635,7 @@ const App = (() => {
   }
 
   function submitComment() {
+    if (!checkLogin()) return;
     const input = document.getElementById('commentInput');
     const text = input.value.trim();
     if (!text) { toast('评论不能为空'); return; }
@@ -1707,6 +1723,7 @@ const App = (() => {
   let replyTargetIndex = -1;
 
     function likeComment(idx) {
+    if (!checkLogin()) return;
     const posts = Store.posts();
     const p = posts.find(x => x.id === currentPostId);
     if (!p || !p.realComments) return;
@@ -1774,6 +1791,7 @@ const App = (() => {
 
   /* ================= 聊天系统 ================= */
   function openChat(userName) {
+    if (!checkLogin()) return;
     currentChatUser = userName;
     switchPage('chat-detail');
   }
