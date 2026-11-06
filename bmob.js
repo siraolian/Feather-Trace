@@ -42,10 +42,12 @@ const DB = {
       query.equalTo("password", "==", password);
       const results = await query.find();
       
-      if (results.length > 0) {
+       if (results.length > 0) {
         const user = results[0];
         const uname = user.username || (user.get ? user.get('username') : '云端用户');
-        return { success: true, user: { username: uname } };
+        const uid = user.objectId || user.id || ('FT-' + Date.now());
+        // 👇 把 id 也加上
+        return { success: true, user: { id: uid, username: uname } };
       }
       return { success: false, msg: '邮箱或密码错误' };
     } catch (e) {
