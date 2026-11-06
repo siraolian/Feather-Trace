@@ -174,6 +174,7 @@ const DB = {
       q.set("likes", post.likes || 0);
       q.set("comments", post.comments || 0);
       q.set("fish", post.fish || 0);
+      q.set("image", post.image || "");
 
       const res = await q.save();
       return res;
@@ -197,6 +198,7 @@ const DB = {
         likes: item.likes,
         comments: item.comments,
         fish: item.fish,
+        image: item.image || undefined,
         time: item.createdAt ? item.createdAt.slice(5, 16) : '刚刚',
         realComments: item.realComments || []
       }));
