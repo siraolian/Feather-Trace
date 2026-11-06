@@ -364,11 +364,11 @@ const App = (() => {
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const maxW = 900, scale = Math.min(1, maxW / img.width);
+        const maxW = 600, scale = Math.min(1, maxW / img.width);
         const canvas = document.createElement('canvas');
         canvas.width = img.width * scale; canvas.height = img.height * scale;
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        cb(canvas.toDataURL('image/jpeg', 0.72));
+        cb(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.src = e.target.result;
     };
