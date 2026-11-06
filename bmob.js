@@ -5,25 +5,24 @@ Bmob.initialize("25f0a6a93ff462d9", "167349");
 // 2. 封装 API
 const DB = {
   // 注册
-     async register(email, password, username) {
+    async register(email, password, username) {
     try {
+      // 👇 查重逻辑
       try {
-        // 👇 终极防坑：把数据全拉下来，在前端自己精确查重！
         const checkQuery = Bmob.Query('Users');
         const checkRes = await checkQuery.find();
         
-        // 检查用户名是否重复
         const userExists = checkRes.some(u => u.username === username);
         if (userExists) return { success: false, msg: '该用户名已被注册啦' };
 
-        // 检查邮箱是否重复
         const emailExists = checkRes.some(u => u.email === email);
         if (emailExists) return { success: false, msg: '该邮箱已被注册啦' };
         
       } catch (checkError) {
         console.log("首次使用，自动跳过查重");
-      
+      } // 👈 【关键修复】：补上了这个丢失的右大括号！
 
+      // 👇 保存逻辑（现在已经正确地在 try 块里了）
       const newUser = Bmob.Query('Users');
       newUser.set("username", username);
       newUser.set("password", password);
@@ -32,10 +31,11 @@ const DB = {
       
       const res = await newUser.save();
       return { success: true, user: { id: res.objectId || res.id, username: username } };
+      
     } catch (e) {
       return { success: false, msg: e.message || '注册失败' };
     }
-  },
+  }, 
 
   // 登录
   async login(email, password) {
