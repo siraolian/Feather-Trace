@@ -2001,11 +2001,12 @@ const App = (() => {
           toast(res ? res.msg : '注册失败');
         }
       } else {
-        const res = await DB.login(email, password);
+                const res = await DB.login(email, password);
          if (res && res.success) {
           toast('登录成功');
           const u = Store.user();
           u.name = res.user.username || '云端用户'; 
+          u.code = res.user.id; // 👈 加上这一行，覆盖掉之前的 FT- 假码
           Store.saveUser(u);
           closeModal('modalAuth');
           // 👇 直接跳转并刷新整个页面视图，名字瞬间变化
