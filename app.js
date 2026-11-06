@@ -1969,7 +1969,7 @@ const App = (() => {
     };
   }
 
-    async function handleAuth() {
+      async function handleAuth() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     const username = document.getElementById('authUsername').value.trim();
@@ -1989,36 +1989,42 @@ const App = (() => {
           u.name = username;
           u.code = res.user.id;
           Store.saveUser(u);
-          if (typeof DB !== 'undefined') {
-            const cloudBirds = await DB.getUserBirds(u.name);
-            if (cloudBirds && cloudBirds.length > 0) {
-              Store.saveBirds(cloudBirds);
+          
+          // 👇 核心修复：单独隔离拉取图鉴的逻辑，报错也不影响注册
+          try {
+            if (typeof DB !== 'undefined') {
+              const cloudBirds = await DB.getUserBirds(u.name);
+              if (cloudBirds && cloudBirds.length > 0) {
+                Store.saveBirds(cloudBirds);
+              }
             }
+          } catch (birdErr) {
+            console.log("拉取云端图鉴失败，已跳过", birdErr);
           }
+
           closeModal('modalAuth');
-          renderMine(document.getElementById('page-mine'));
+          App.switchPage('mine'); 
         } else {
           toast(res ? res.msg : '注册失败');
         }
       } else {
-                const res = await DB.login(email, password);
+        const res = await DB.login(email, password);
          if (res && res.success) {
           toast('登录成功');
           const u = Store.user();
           u.name = res.user.username || '云端用户'; 
-          u.code = res.user.id; // 👈 加上这一行，覆盖掉之前的 FT- 假码
+          u.code = res.user.id; 
           Store.saveUser(u);
           closeModal('modalAuth');
-          // 👇 直接跳转并刷新整个页面视图，名字瞬间变化
           App.switchPage('mine'); 
-        }else {
+        } else {
           toast(res ? res.msg : '登录失败，请检查网络');
         }
       }
     } catch (error) {
-      // 👇 终极保护：防止任何未知错误导致页面白屏或崩溃
+      console.error("真实报错被捕获：", error);
+      // 如果真的是网络错误，这里才会触发
       toast('网络请求出错，请稍后再试');
-      console.error(error);
     } finally {
       btn.textContent = isRegisterMode ? '注 册' : '登 录';
     }
